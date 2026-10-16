@@ -28,7 +28,6 @@ import { DashboardSection } from './components/DashboardSection';
 import { HistorySection } from './components/HistorySection';
 import { ProfileModal } from './components/ProfileModal';
 import { RetroactiveLogModal } from './components/RetroactiveLogModal';
-import { PWAInstallBanner } from './components/PWAInstallBanner';
 import { Toast, ToastMessage } from './components/Toast';
 
 export default function App() {
@@ -197,9 +196,6 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 pb-24 pt-2">
-        {/* Android PWA Install Banner */}
-        <PWAInstallBanner />
-
         {activeTab === 'log' && (
           <BigButtonSection
             dog={dog}
