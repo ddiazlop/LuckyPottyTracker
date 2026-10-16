@@ -12,11 +12,14 @@ export interface PottyLog {
   notes?: string;
 }
 
+export type DogLifeStage = 'puppy' | 'adult' | 'senior';
+
 export interface DogProfile {
   id: string;
   name: string;
   breed: string;
-  isPuppy: boolean;
+  lifeStage: DogLifeStage;
+  isPuppy: boolean; // maintained for backwards compatibility
   avatarUrl: string;
   targetIntervalHours: number; // e.g. 3.5 hours between outings
 }

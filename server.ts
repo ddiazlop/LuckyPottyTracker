@@ -37,6 +37,7 @@ app.post('/api/ai/potty-insights', async (req: Request, res: Response) => {
       dogName = 'Lucky',
       breed = 'Golden Retriever',
       isPuppy = false,
+      lifeStage = isPuppy ? 'puppy' : 'adult',
       targetIntervalHours = 4,
       totalLogs = 0,
       totalPees = 0,
@@ -57,19 +58,26 @@ app.post('/api/ai/potty-insights', async (req: Request, res: Response) => {
 
     if (!ai) {
       // Local fallback if API key is not configured
-      const fallbackTips = isPuppy
-        ? [
-            `Take ${dogName} out ${avgMinutesToPoopAfterMeal ? `around ${avgMinutesToPoopAfterMeal}m` : '15-30m'} after each meal, as digestion naturally triggers bowel motility.`,
-            `When using the Terrace or going on Walks, mark successful elimination with a high-value treat within 2 seconds.`,
-            `Keep feeding times strictly consistent to stabilize predictable elimination windows.`,
-          ]
-        : [
-            avgMinutesToPoopAfterMeal
-              ? `${dogName} consistently needs to poop ~${avgMinutesToPoopAfterMeal} minutes after eating. Time post-meal walks around this exact window!`
-              : `Take ${dogName} for a walk 30–45 minutes after feeding to support the natural post-meal gastrocolic reflex.`,
-            `Pair the cue word right as ${dogName} squats at ${locationBreakdown.Walk >= locationBreakdown.Terrace ? 'Walks' : 'the Terrace'} to solidify outdoor association.`,
-            `Keep walks consistent at regular intervals to maintain the ${outdoorSuccessRate}% clean record.`,
-          ];
+      const fallbackTips =
+        lifeStage === 'puppy'
+          ? [
+              `Take ${dogName} out ${avgMinutesToPoopAfterMeal ? `around ${avgMinutesToPoopAfterMeal}m` : '15-30m'} after each meal, as digestion naturally triggers bowel motility.`,
+              `When using the Terrace or going on Walks, mark successful elimination with a high-value treat within 2 seconds.`,
+              `Keep feeding times strictly consistent to stabilize predictable elimination windows.`,
+            ]
+          : lifeStage === 'senior'
+          ? [
+              `Take ${dogName} on gentle, frequent outings (every 2.5–3.5 hours) to support aging bladder elasticity.`,
+              `Ensure non-slip traction leading outdoors to minimize arthritis and joint stress.`,
+              `Keep fresh water available at all times and monitor urination patterns for early health cues.`,
+            ]
+          : [
+              avgMinutesToPoopAfterMeal
+                ? `${dogName} consistently needs to poop ~${avgMinutesToPoopAfterMeal} minutes after eating. Time post-meal walks around this exact window!`
+                : `Take ${dogName} for a walk 30–45 minutes after feeding to support the natural post-meal gastrocolic reflex.`,
+              `Pair the cue word right as ${dogName} squats at ${locationBreakdown.Walk >= locationBreakdown.Terrace ? 'Walks' : 'the Terrace'} to solidify outdoor association.`,
+              `Keep walks consistent at regular intervals to maintain the ${outdoorSuccessRate}% clean record.`,
+            ];
 
       return res.json({
         success: true,
@@ -92,7 +100,7 @@ app.post('/api/ai/potty-insights', async (req: Request, res: Response) => {
 
     const prompt = `Analyze the following real dog potty & feeding tracking log for a dog named ${dogName}:
 - Breed: ${breed}
-- Life stage: ${isPuppy ? 'Puppy (learning)' : 'Adult'}
+- Life stage: ${lifeStage === 'puppy' ? 'Puppy (learning)' : lifeStage === 'senior' ? 'Senior dog (aging bladder / mobility awareness)' : 'Adult dog'}
 - Target owner hold goal: ${targetIntervalHours} hours
 - Realized average hold time: ${avgHoldTimeHours} hours
 - Total logged events: ${totalLogs} (${totalPees} pees, ${totalPoops} poops, ${totalMeals} meals)

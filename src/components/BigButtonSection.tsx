@@ -151,9 +151,17 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
             <div>
               <div className="flex items-center gap-1.5">
                 <h2 className="text-base font-bold text-slate-900 tracking-tight">{dog.name}</h2>
-                {dog.isPuppy && (
-                  <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">
-                    Puppy
+                {dog.lifeStage === 'puppy' ? (
+                  <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60">
+                    🐾 Puppy
+                  </span>
+                ) : dog.lifeStage === 'senior' ? (
+                  <span className="text-[11px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200/60">
+                    🦴 Senior
+                  </span>
+                ) : (
+                  <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200/60">
+                    🐕 Adult
                   </span>
                 )}
               </div>

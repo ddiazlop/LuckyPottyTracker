@@ -34,18 +34,11 @@ import {
   formatTimeAgo,
 } from '../utils/stats';
 import { haptics } from '../utils/haptics';
+import { generateOfflineCoachInsights, AICoachData } from '../utils/aiCoach';
 
 interface DashboardSectionProps {
   dog: DogProfile;
   logs: PottyLog[];
-}
-
-interface AICoachData {
-  summary: string;
-  keyPattern: string;
-  tips: string[];
-  recommendedNextStep: string;
-  statusMood: 'excellent' | 'steady' | 'needs_attention';
 }
 
 export const DashboardSection: React.FC<DashboardSectionProps> = ({ dog, logs }) => {
@@ -84,80 +77,28 @@ export const DashboardSection: React.FC<DashboardSectionProps> = ({ dog, logs })
     stats.timeOfDayBuckets.evening +
     stats.timeOfDayBuckets.night;
 
-  // Fetch AI-assisted Potty Training Coach summary
-  const fetchAICoach = useCallback(async () => {
-    setIsCoachLoading(true);
-
-    const lastPeeLog = logs.find((l) => l.type === 'pee' || l.type === 'both');
-    const lastPoopLog = logs.find((l) => l.type === 'poop' || l.type === 'both');
-
-    try {
-      const res = await fetch('/api/ai/potty-insights', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          dogName: dog.name,
-          breed: dog.breed,
-          isPuppy: dog.isPuppy,
-          targetIntervalHours: dog.targetIntervalHours,
-          totalLogs: stats.totalLogs,
-          totalPees: stats.totalPees,
-          totalPoops: stats.totalPoops,
-          totalMeals: stats.totalMeals,
-          totalAccidents: stats.totalAccidents,
-          outdoorSuccessRate: stats.outdoorSuccessRate,
-          avgHoldTimeHours: stats.avgHoldTimeHours,
-          avgMinutesToPoopAfterMeal: stats.avgMinutesToPoopAfterMeal,
-          locationBreakdown: locationCounts,
-          timeOfDayBuckets: stats.timeOfDayBuckets,
-          lastPeeAgo: formatTimeAgo(lastPeeLog?.timestamp ?? null),
-          lastPoopAgo: formatTimeAgo(lastPoopLog?.timestamp ?? null),
-          lastMealAgo: formatTimeAgo(stats.lastMealTimestamp),
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error('Coach service temporarily unavailable');
-      }
-
-      const data = await res.json();
-      if (data.success && data.insights) {
-        setCoachData(data.insights);
+  // Generate AI-assisted Potty Training Coach insights (100% Offline Client-Side Heuristic)
+  const refreshAICoach = useCallback(
+    (withSimulation = false) => {
+      if (withSimulation) {
+        setIsCoachLoading(true);
+        setTimeout(() => {
+          const insights = generateOfflineCoachInsights(dog, logs, stats, locationCounts);
+          setCoachData(insights);
+          setIsCoachLoading(false);
+        }, 250);
       } else {
-        throw new Error(data.error || 'Could not parse insights');
+        const insights = generateOfflineCoachInsights(dog, logs, stats, locationCounts);
+        setCoachData(insights);
       }
-    } catch {
-      // Graceful local heuristic fallback
-      setCoachData({
-        summary: `${dog.name} has logged ${stats.totalLogs} events with an outdoor clean hold rate of ${stats.outdoorSuccessRate}%. Holding interval averages ${stats.avgHoldTimeHours} hours${
-          stats.avgMinutesToPoopAfterMeal ? `, and elimination occurs ~${stats.avgMinutesToPoopAfterMeal}m after meals` : ''
-        }.`,
-        keyPattern: `${
-          stats.avgMinutesToPoopAfterMeal
-            ? `Post-meal gastrocolic reflex occurs consistently around ${stats.avgMinutesToPoopAfterMeal} minutes after feeding.`
-            : `Outings on ${locationCounts.Walk >= locationCounts.Terrace ? 'Walks' : 'the Terrace'} show great consistency.`
-        }`,
-        tips: [
-          stats.avgMinutesToPoopAfterMeal
-            ? `Take ${dog.name} out around ${stats.avgMinutesToPoopAfterMeal}m after each meal to capture their natural digestive rhythm.`
-            : `Proactively schedule an outing 30-45m after meals to support natural digestion.`,
-          `Reward ${dog.name} with enthusiastic praise immediately when eliminating on Walks or Terrace.`,
-          `Keep regular feeding schedules so morning and evening bowel movements stay predictable.`,
-        ],
-        recommendedNextStep: stats.predictedNextPottyTimestamp
-          ? `Plan next outing around ${formatClockTime(stats.predictedNextPottyTimestamp)}.`
-          : 'Plan an outing within the next 2-3 hours.',
-        statusMood: stats.outdoorSuccessRate >= 90 ? 'excellent' : 'steady',
-      });
-    } finally {
-      setIsCoachLoading(false);
-    }
-  }, [dog, logs, stats, locationCounts]);
+    },
+    [dog, logs, stats, locationCounts]
+  );
 
-  // Initial load of AI coach
+  // Initial load & auto-refresh of offline AI coach
   useEffect(() => {
-    fetchAICoach();
-  }, [dog.id, logs.length]); // Refresh when new logs arrive or dog changes
+    refreshAICoach(false);
+  }, [dog.id, logs.length, dog.targetIntervalHours, dog.lifeStage]);
 
   return (
     <div className="w-full max-w-xl mx-auto px-4 py-3 flex flex-col gap-4">
@@ -171,9 +112,14 @@ export const DashboardSection: React.FC<DashboardSectionProps> = ({ dog, logs })
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-amber-400 block leading-tight">
-                AI Potty Coach
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-400 block leading-tight">
+                  AI Potty Coach
+                </span>
+                <span className="text-[9px] font-semibold tracking-wide bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded-full border border-amber-400/30">
+                  100% Offline
+                </span>
+              </div>
               <span className="text-[10px] text-slate-400 block">Personalized for {dog.name}</span>
             </div>
           </div>
@@ -181,11 +127,11 @@ export const DashboardSection: React.FC<DashboardSectionProps> = ({ dog, logs })
           <button
             onClick={() => {
               haptics.triggerTick();
-              fetchAICoach();
+              refreshAICoach(true);
             }}
             disabled={isCoachLoading}
             className="px-2.5 py-1 bg-white/10 hover:bg-white/15 active:scale-95 disabled:opacity-50 text-slate-200 text-xs font-medium rounded-xl flex items-center gap-1.5 transition-all"
-            title="Refresh AI Analysis"
+            title="Recalculate AI Analysis"
           >
             <RefreshCw className={`w-3 h-3 ${isCoachLoading ? 'animate-spin' : ''}`} />
             <span>{isCoachLoading ? 'Analyzing...' : 'Refresh'}</span>

@@ -12,7 +12,7 @@ import {
   Shield,
   Clock,
 } from 'lucide-react';
-import { DogProfile, PottyLog } from '../types';
+import { DogProfile, PottyLog, DogLifeStage } from '../types';
 import { haptics } from '../utils/haptics';
 
 interface ProfileModalProps {
@@ -38,7 +38,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 }) => {
   const [name, setName] = useState(dog.name);
   const [breed, setBreed] = useState(dog.breed);
-  const [isPuppy, setIsPuppy] = useState(dog.isPuppy);
+  const [lifeStage, setLifeStage] = useState<DogLifeStage>(
+    dog.lifeStage || (dog.isPuppy ? 'puppy' : 'adult')
+  );
   const [targetInterval, setTargetInterval] = useState(dog.targetIntervalHours);
   const [soundEnabled, setSoundEnabled] = useState(haptics.isSoundEnabled());
   const [hapticsEnabled, setHapticsEnabled] = useState(haptics.isHapticsEnabled());
@@ -51,7 +53,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       ...dog,
       name: name.trim() || 'My Dog',
       breed: breed.trim() || 'Dog',
-      isPuppy,
+      lifeStage,
+      isPuppy: lifeStage === 'puppy',
       targetIntervalHours: Number(targetInterval) || 4,
     });
     onClose();
@@ -133,28 +136,75 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             />
           </div>
 
-          {/* Puppy Status */}
-          <div className="flex items-center justify-between p-3 rounded-2xl bg-amber-50/70 border border-amber-100">
-            <div>
-              <span className="font-bold text-slate-900 block">Puppy Training Mode</span>
-              <p className="text-[11px] text-slate-500">More frequent reminders & accident tracking</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                haptics.triggerTick();
-                setIsPuppy(!isPuppy);
-              }}
-              className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors ${
-                isPuppy ? 'bg-amber-600' : 'bg-slate-300'
-              }`}
-            >
-              <div
-                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
-                  isPuppy ? 'translate-x-5' : 'translate-x-0'
+          {/* Life Stage Selection */}
+          <div>
+            <label className="font-bold text-slate-700 block mb-1.5">Life Stage</label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  haptics.triggerTick();
+                  setLifeStage('puppy');
+                  if (targetInterval > 3) setTargetInterval(2.5);
+                }}
+                className={`p-2.5 rounded-2xl border text-left transition-all flex flex-col justify-between ${
+                  lifeStage === 'puppy'
+                    ? 'border-amber-500 bg-amber-500/10 text-amber-900 shadow-xs ring-2 ring-amber-500/30'
+                    : 'border-slate-200 bg-slate-50/70 text-slate-600 hover:bg-slate-100'
                 }`}
-              />
-            </button>
+              >
+                <div className="text-xl mb-1">🐾</div>
+                <div>
+                  <span className="font-bold text-xs block leading-tight">Puppy</span>
+                  <span className="text-[10px] text-slate-500 block mt-0.5">&lt; 1 year</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  haptics.triggerTick();
+                  setLifeStage('adult');
+                  if (targetInterval < 3 || targetInterval > 6) setTargetInterval(4);
+                }}
+                className={`p-2.5 rounded-2xl border text-left transition-all flex flex-col justify-between ${
+                  lifeStage === 'adult'
+                    ? 'border-blue-500 bg-blue-500/10 text-blue-900 shadow-xs ring-2 ring-blue-500/30'
+                    : 'border-slate-200 bg-slate-50/70 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <div className="text-xl mb-1">🐕</div>
+                <div>
+                  <span className="font-bold text-xs block leading-tight">Adult</span>
+                  <span className="text-[10px] text-slate-500 block mt-0.5">1–7 years</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  haptics.triggerTick();
+                  setLifeStage('senior');
+                  if (targetInterval > 4.5) setTargetInterval(3.5);
+                }}
+                className={`p-2.5 rounded-2xl border text-left transition-all flex flex-col justify-between ${
+                  lifeStage === 'senior'
+                    ? 'border-purple-500 bg-purple-500/10 text-purple-900 shadow-xs ring-2 ring-purple-500/30'
+                    : 'border-slate-200 bg-slate-50/70 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <div className="text-xl mb-1">🦴</div>
+                <div>
+                  <span className="font-bold text-xs block leading-tight">Senior</span>
+                  <span className="text-[10px] text-slate-500 block mt-0.5">7+ years</span>
+                </div>
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
+              {lifeStage === 'puppy' && '🐾 Puppies have developing bladders: require frequent breaks (1.5–3h) and quick post-meal timing.'}
+              {lifeStage === 'adult' && '🐕 Adults have mature bladder control: comfortably hold 4–6h with a steady daily routine.'}
+              {lifeStage === 'senior' && '🦴 Senior dogs need gentler pacing, frequent relief (2.5–4h), and arthritis/mobility consideration.'}
+            </p>
           </div>
 
           {/* Target Daytime Hold Interval */}
@@ -173,7 +223,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               className="w-full accent-amber-600"
             />
             <p className="text-[11px] text-slate-600 mt-1">
-              Puppies usually hold 1-2 hours; adult dogs typically 4-6 hours.
+              Typical hold times: Puppies 1.5–3h • Adults 4–6h • Seniors 2.5–4h
             </p>
           </div>
 

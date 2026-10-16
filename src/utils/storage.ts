@@ -1,11 +1,12 @@
 import { DogProfile, PottyLog, PottyLocation } from '../types';
 
-export const DEFAULT_AVATAR = '/src/assets/images/dog_mascot_avatar_1792141800760.jpg';
+export const DEFAULT_AVATAR = '/images/dog_mascot_avatar_1792141800760.jpg';
 
 export const DEFAULT_PROFILE: DogProfile = {
   id: 'dog-1',
   name: 'Lucky',
   breed: 'Golden Retriever',
+  lifeStage: 'adult',
   isPuppy: false,
   avatarUrl: DEFAULT_AVATAR,
   targetIntervalHours: 4,
@@ -22,8 +23,17 @@ export function getStoredProfile(): DogProfile {
     const parsed = JSON.parse(raw);
     if (parsed.name === 'Buster') {
       parsed.name = 'Lucky';
-      saveProfile(parsed);
     }
+    // Migrate legacy path to public asset
+    if (!parsed.avatarUrl || parsed.avatarUrl.startsWith('/src/assets/')) {
+      parsed.avatarUrl = DEFAULT_AVATAR;
+    }
+    // Migrate legacy lifeStage
+    if (!parsed.lifeStage) {
+      parsed.lifeStage = parsed.isPuppy ? 'puppy' : 'adult';
+    }
+    parsed.isPuppy = parsed.lifeStage === 'puppy';
+    saveProfile(parsed);
     return parsed;
   } catch {
     return DEFAULT_PROFILE;

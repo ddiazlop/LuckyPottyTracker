@@ -12,6 +12,11 @@ export default defineConfig(() => {
       VitePWA({
         registerType: 'autoUpdate',
         manifest: false, // We supply /public/manifest.webmanifest
+        includeAssets: ['icon.svg', 'images/*.jpg'],
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webmanifest}'],
+          navigateFallback: 'index.html',
+        },
         devOptions: {
           enabled: true,
         },
@@ -19,7 +24,7 @@ export default defineConfig(() => {
     ],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(import.meta.dirname || '.', '.'),
       },
     },
     server: {
