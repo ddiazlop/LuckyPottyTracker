@@ -12,7 +12,7 @@ export default defineConfig(() => {
       VitePWA({
         registerType: 'autoUpdate',
         manifest: false, // We supply /public/manifest.webmanifest
-        includeAssets: ['icon.svg', 'images/*.jpg'],
+        includeAssets: ['icon.svg', 'icon-192.png', 'icon-512.png', 'images/*.jpg'],
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webmanifest}'],
           navigateFallback: 'index.html',
