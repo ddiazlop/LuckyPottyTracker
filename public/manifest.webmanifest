@@ -1,0 +1,21 @@
+{
+  "id": "/",
+  "name": "Paws & Pots - Dog Potty Tracker",
+  "short_name": "Paws&Pots",
+  "description": "An expressive, tactile dog potty tracker with one-tap logging, haptic feedback, and time-of-day potty statistics.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8fafc",
+  "theme_color": "#f59e0b",
+  "categories": ["lifestyle", "utilities", "pets"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Paws & Pots - Dog Potty Tracker",
+  "description": "An expressive, tactile dog potty tracker with one-tap logging, haptic feedback, and time-of-day potty statistics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
