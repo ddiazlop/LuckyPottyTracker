@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  X,
   Dog,
   Volume2,
   VolumeX,
@@ -8,12 +7,37 @@ import {
   RotateCcw,
   Download,
   Upload,
-  Check,
-  Shield,
-  Clock,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { DogProfile, PottyLog, DogLifeStage } from '../types';
 import { haptics } from '../utils/haptics';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -25,6 +49,15 @@ interface ProfileModalProps {
   logs: PottyLog[];
   onImportLogs: (logs: PottyLog[]) => void;
 }
+
+const LIFE_STAGE_STYLES: Record<DogLifeStage, string> = {
+  puppy:
+    'data-[state=on]:border-amber-500 data-[state=on]:bg-amber-500/10 data-[state=on]:text-amber-900 data-[state=on]:shadow-xs data-[state=on]:ring-2 data-[state=on]:ring-amber-500/30',
+  adult:
+    'data-[state=on]:border-blue-500 data-[state=on]:bg-blue-500/10 data-[state=on]:text-blue-900 data-[state=on]:shadow-xs data-[state=on]:ring-2 data-[state=on]:ring-blue-500/30',
+  senior:
+    'data-[state=on]:border-purple-500 data-[state=on]:bg-purple-500/10 data-[state=on]:text-purple-900 data-[state=on]:shadow-xs data-[state=on]:ring-2 data-[state=on]:ring-purple-500/30',
+};
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({
   isOpen,
@@ -44,8 +77,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const [targetInterval, setTargetInterval] = useState(dog.targetIntervalHours);
   const [soundEnabled, setSoundEnabled] = useState(haptics.isSoundEnabled());
   const [hapticsEnabled, setHapticsEnabled] = useState(haptics.isHapticsEnabled());
-
-  if (!isOpen) return null;
 
   const handleSave = () => {
     haptics.triggerTick();
@@ -81,125 +112,105 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           if (Array.isArray(parsed)) {
             onImportLogs(parsed);
             haptics.triggerBothLog();
-            alert(`Successfully imported ${parsed.length} logs!`);
+            toast.success(`Successfully imported ${parsed.length} logs!`);
           }
         } catch {
-          alert('Invalid JSON file format.');
+          toast.error('Invalid JSON file format.');
         }
       };
     }
   };
 
+  const handleLifeStageChange = (value: string) => {
+    if (!value) return;
+    haptics.triggerTick();
+    const stage = value as DogLifeStage;
+    setLifeStage(stage);
+
+    if (stage === 'puppy' && targetInterval > 3) setTargetInterval(2.5);
+    if (stage === 'adult' && (targetInterval < 3 || targetInterval > 6)) setTargetInterval(4);
+    if (stage === 'senior' && targetInterval > 4.5) setTargetInterval(3.5);
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl text-slate-900 border border-slate-100 my-auto">
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent className="max-w-md">
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-          <div className="flex items-center gap-2">
+        <DialogHeader>
+          <DialogTitle>
             <Dog className="w-5 h-5 text-amber-600" />
-            <h2 className="text-base font-bold text-slate-900">Dog Profile & App Settings</h2>
-          </div>
-          <button
-            onClick={() => {
-              haptics.triggerTick();
-              onClose();
-            }}
-            className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+            Dog Profile &amp; App Settings
+          </DialogTitle>
+          <DialogDescription>
+            Tune {dog.name}&apos;s routine, feedback options and local data.
+          </DialogDescription>
+        </DialogHeader>
 
         {/* Content */}
-        <div className="space-y-4 py-4 text-xs">
+        <div className="space-y-4 text-xs">
           {/* Dog Name */}
-          <div>
-            <label className="font-bold text-slate-700 block mb-1">Dog&apos;s Name</label>
-            <input
+          <div className="space-y-1.5">
+            <Label htmlFor="dog-name">Dog&apos;s Name</Label>
+            <Input
+              id="dog-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 font-semibold focus:outline-hidden focus:ring-2 focus:ring-amber-500"
+              className="font-semibold"
               placeholder="e.g. Lucky"
             />
           </div>
 
           {/* Breed */}
-          <div>
-            <label className="font-bold text-slate-700 block mb-1">Breed / Mix</label>
-            <input
+          <div className="space-y-1.5">
+            <Label htmlFor="dog-breed">Breed / Mix</Label>
+            <Input
+              id="dog-breed"
               type="text"
               value={breed}
               onChange={(e) => setBreed(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 font-medium focus:outline-hidden focus:ring-2 focus:ring-amber-500"
+              className="font-medium"
               placeholder="e.g. Golden Retriever"
             />
           </div>
 
           {/* Life Stage Selection */}
           <div>
-            <label className="font-bold text-slate-700 block mb-1.5">Life Stage</label>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  haptics.triggerTick();
-                  setLifeStage('puppy');
-                  if (targetInterval > 3) setTargetInterval(2.5);
-                }}
-                className={`p-2.5 rounded-2xl border text-left transition-all flex flex-col justify-between ${
-                  lifeStage === 'puppy'
-                    ? 'border-amber-500 bg-amber-500/10 text-amber-900 shadow-xs ring-2 ring-amber-500/30'
-                    : 'border-slate-200 bg-slate-50/70 text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                <div className="text-xl mb-1">🐾</div>
-                <div>
-                  <span className="font-bold text-xs block leading-tight">Puppy</span>
-                  <span className="text-[10px] text-slate-500 block mt-0.5">&lt; 1 year</span>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  haptics.triggerTick();
-                  setLifeStage('adult');
-                  if (targetInterval < 3 || targetInterval > 6) setTargetInterval(4);
-                }}
-                className={`p-2.5 rounded-2xl border text-left transition-all flex flex-col justify-between ${
-                  lifeStage === 'adult'
-                    ? 'border-blue-500 bg-blue-500/10 text-blue-900 shadow-xs ring-2 ring-blue-500/30'
-                    : 'border-slate-200 bg-slate-50/70 text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                <div className="text-xl mb-1">🐕</div>
-                <div>
-                  <span className="font-bold text-xs block leading-tight">Adult</span>
-                  <span className="text-[10px] text-slate-500 block mt-0.5">1–7 years</span>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  haptics.triggerTick();
-                  setLifeStage('senior');
-                  if (targetInterval > 4.5) setTargetInterval(3.5);
-                }}
-                className={`p-2.5 rounded-2xl border text-left transition-all flex flex-col justify-between ${
-                  lifeStage === 'senior'
-                    ? 'border-purple-500 bg-purple-500/10 text-purple-900 shadow-xs ring-2 ring-purple-500/30'
-                    : 'border-slate-200 bg-slate-50/70 text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                <div className="text-xl mb-1">🦴</div>
-                <div>
-                  <span className="font-bold text-xs block leading-tight">Senior</span>
-                  <span className="text-[10px] text-slate-500 block mt-0.5">7+ years</span>
-                </div>
-              </button>
-            </div>
+            <Label className="mb-1.5">Life Stage</Label>
+            <ToggleGroup
+              type="single"
+              value={lifeStage}
+              onValueChange={handleLifeStageChange}
+              className="grid w-full grid-cols-3 gap-2"
+            >
+              {(
+                [
+                  { id: 'puppy', emoji: '🐾', label: 'Puppy', age: '< 1 year' },
+                  { id: 'adult', emoji: '🐕', label: 'Adult', age: '1–7 years' },
+                  { id: 'senior', emoji: '🦴', label: 'Senior', age: '7+ years' },
+                ] as const
+              ).map((stage) => (
+                <ToggleGroupItem
+                  key={stage.id}
+                  value={stage.id}
+                  className={cn(
+                    'flex h-auto w-full flex-col items-start justify-between gap-0 rounded-2xl border border-slate-200 bg-slate-50/70 p-2.5 text-left text-slate-600 hover:bg-slate-100',
+                    LIFE_STAGE_STYLES[stage.id]
+                  )}
+                >
+                  <span className="text-xl mb-1">{stage.emoji}</span>
+                  <span>
+                    <span className="font-bold text-xs block leading-tight">{stage.label}</span>
+                    <span className="text-[10px] text-slate-500 block mt-0.5">{stage.age}</span>
+                  </span>
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
             <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
               {lifeStage === 'puppy' && '🐾 Puppies have developing bladders: require frequent breaks (1.5–3h) and quick post-meal timing.'}
               {lifeStage === 'adult' && '🐕 Adults have mature bladder control: comfortably hold 4–6h with a steady daily routine.'}
@@ -209,27 +220,26 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
           {/* Target Daytime Hold Interval */}
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="font-bold text-slate-700">Target Hold Time (Hours)</label>
+            <div className="flex items-center justify-between mb-2">
+              <Label>Target Hold Time (Hours)</Label>
               <span className="font-bold text-amber-700 tabular-nums">{targetInterval} hours</span>
             </div>
-            <input
-              type="range"
-              min="1"
-              max="8"
-              step="0.5"
-              value={targetInterval}
-              onChange={(e) => setTargetInterval(parseFloat(e.target.value))}
-              className="w-full accent-amber-600"
+            <Slider
+              min={1}
+              max={8}
+              step={0.5}
+              value={[targetInterval]}
+              onValueChange={([value]) => setTargetInterval(value)}
             />
-            <p className="text-[11px] text-slate-600 mt-1">
+            <p className="text-[11px] text-slate-600 mt-2">
               Typical hold times: Puppies 1.5–3h • Adults 4–6h • Seniors 2.5–4h
             </p>
           </div>
 
           {/* Tactile & Sound Settings */}
-          <div className="pt-2 border-t border-slate-100 space-y-2.5">
-            <span className="font-bold text-slate-900 block">Expressive Feedback</span>
+          <div className="space-y-2.5 pt-1">
+            <Separator />
+            <span className="font-bold text-slate-900 block pt-1">Expressive Feedback</span>
 
             {/* Haptic vibration */}
             <div className="flex items-center justify-between">
@@ -237,24 +247,15 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 <Vibrate className="w-4 h-4 text-slate-500" />
                 <span className="text-slate-700 font-medium">Haptic Vibration</span>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  const next = !hapticsEnabled;
+              <Switch
+                checked={hapticsEnabled}
+                aria-label="Toggle haptic vibration"
+                onCheckedChange={(next) => {
                   setHapticsEnabled(next);
                   haptics.setHapticsEnabled(next);
                   if (next) haptics.triggerPeeLog();
                 }}
-                className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors ${
-                  hapticsEnabled ? 'bg-emerald-600' : 'bg-slate-300'
-                }`}
-              >
-                <div
-                  className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
-                    hapticsEnabled ? 'translate-x-5' : 'translate-x-0'
-                  }`}
-                />
-              </button>
+              />
             </div>
 
             {/* Tactile Sound FX */}
@@ -267,97 +268,97 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 )}
                 <span className="text-slate-700 font-medium">Tactile Sound Effects</span>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  const next = !soundEnabled;
+              <Switch
+                checked={soundEnabled}
+                aria-label="Toggle tactile sound effects"
+                onCheckedChange={(next) => {
                   setSoundEnabled(next);
                   haptics.setSoundEnabled(next);
                   if (next) haptics.triggerPeeLog();
                 }}
-                className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors ${
-                  soundEnabled ? 'bg-emerald-600' : 'bg-slate-300'
-                }`}
-              >
-                <div
-                  className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
-                    soundEnabled ? 'translate-x-5' : 'translate-x-0'
-                  }`}
-                />
-              </button>
+              />
             </div>
           </div>
 
           {/* Data Controls */}
-          <div className="pt-2 border-t border-slate-100 space-y-2">
-            <span className="font-bold text-slate-900 block">Data & Sample Set</span>
+          <div className="space-y-2 pt-1">
+            <Separator />
+            <span className="font-bold text-slate-900 block pt-1">Data &amp; Sample Set</span>
             <div className="grid grid-cols-2 gap-2">
-              <button
+              <Button
+                variant="soft"
                 onClick={() => {
                   haptics.triggerTick();
                   onLoadSampleData();
                 }}
-                className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                className="h-auto py-2 text-xs"
               >
                 <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
                 <span>Sample Data</span>
-              </button>
+              </Button>
 
-              <button
-                onClick={handleExport}
-                className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold flex items-center justify-center gap-1.5 transition-colors"
-              >
+              <Button variant="soft" onClick={handleExport} className="h-auto py-2 text-xs">
                 <Download className="w-3.5 h-3.5 text-slate-500" />
                 <span>Export JSON</span>
-              </button>
+              </Button>
             </div>
 
             <div className="flex items-center justify-between pt-1">
-              <label className="cursor-pointer text-slate-600 hover:text-slate-900 font-medium flex items-center gap-1.5">
-                <Upload className="w-3.5 h-3.5" />
-                <span>Import JSON</span>
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={handleImportFile}
-                  className="hidden"
-                />
-              </label>
+              <Button variant="ghost" asChild className="h-auto px-0 text-slate-600 hover:bg-transparent hover:text-slate-900">
+                <label className="cursor-pointer font-medium">
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Import JSON</span>
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleImportFile}
+                    className="sr-only"
+                  />
+                </label>
+              </Button>
 
-              <button
-                onClick={() => {
-                  haptics.triggerUndo();
-                  if (window.confirm('Clear all potty records?')) {
-                    onResetData();
-                  }
-                }}
-                className="text-rose-600 hover:text-rose-700 font-medium"
-              >
-                Clear All Logs
-              </button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="link"
+                    onClick={() => haptics.triggerUndo()}
+                    className="h-auto p-0 text-xs font-medium text-rose-600 hover:text-rose-700"
+                  >
+                    Clear All Logs
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Clear all potty records?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This removes every logged event for {dog.name} from this device. This action
+                      cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={onResetData}>Clear All Logs</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         </div>
 
         {/* Footer Actions */}
-        <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-          <button
+        <DialogFooter>
+          <Button
+            variant="ghost"
             onClick={() => {
               haptics.triggerTick();
               onClose();
             }}
-            className="px-4 py-2.5 rounded-xl text-slate-600 font-semibold text-xs hover:bg-slate-100 transition-colors"
           >
             Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition-colors shadow-xs"
-          >
-            Save Changes
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+          <Button onClick={handleSave}>Save Changes</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };

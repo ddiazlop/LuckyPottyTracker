@@ -15,6 +15,18 @@ import {
 import { DogProfile, PottyLog, PottyType, PottyLocation } from '../types';
 import { haptics } from '../utils/haptics';
 import { formatTimeAgo, formatClockTime } from '../utils/stats';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
 interface BigButtonSectionProps {
   dog: DogProfile;
@@ -29,6 +41,15 @@ const LOCATION_OPTIONS: { id: PottyLocation; label: string; icon: string }[] = [
   { id: 'Park', label: 'Park', icon: '🌳' },
   { id: 'Indoors', label: 'Indoors', icon: '🏠' },
 ];
+
+const TIME_OFFSETS = [
+  { label: 'Now', offset: 0 },
+  { label: '-5m', offset: 5 },
+  { label: '-15m', offset: 15 },
+  { label: '-30m', offset: 30 },
+];
+
+const MotionButton = motion.create(Button);
 
 export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
   dog,
@@ -129,10 +150,19 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
     if (timeOffsetMinutes !== 0) setTimeOffsetMinutes(0);
   };
 
+  const lifecycleBadge =
+    dog.lifeStage === 'puppy' ? (
+      <Badge variant="amber">🐾 Puppy</Badge>
+    ) : dog.lifeStage === 'senior' ? (
+      <Badge variant="purple">🦴 Senior</Badge>
+    ) : (
+      <Badge variant="blue">🐕 Adult</Badge>
+    );
+
   return (
     <div className="w-full max-w-xl mx-auto px-4 py-3 flex flex-col gap-4">
       {/* Dog Status & Hold Time Header */}
-      <div className="bg-white rounded-3xl p-4 shadow-xs border border-slate-200/80">
+      <Card className="gap-0 p-4">
         <div className="flex items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-3">
             <div className="relative">
@@ -151,19 +181,7 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
             <div>
               <div className="flex items-center gap-1.5">
                 <h2 className="text-base font-bold text-slate-900 tracking-tight">{dog.name}</h2>
-                {dog.lifeStage === 'puppy' ? (
-                  <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60">
-                    🐾 Puppy
-                  </span>
-                ) : dog.lifeStage === 'senior' ? (
-                  <span className="text-[11px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200/60">
-                    🦴 Senior
-                  </span>
-                ) : (
-                  <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200/60">
-                    🐕 Adult
-                  </span>
-                )}
+                {lifecycleBadge}
               </div>
               <p className="text-xs text-slate-500">
                 {isDueSoon ? 'Potty outing recommended soon' : 'All good & comfortable'}
@@ -171,21 +189,23 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
             </div>
           </div>
 
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => {
               haptics.triggerTick();
               onOpenRetroModal();
             }}
-            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-transform"
+            className="h-auto rounded-xl bg-slate-100 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-200"
           >
             <Clock className="w-3.5 h-3.5 text-slate-500" />
             <span>Past Log</span>
-          </button>
+          </Button>
         </div>
 
         {/* Hold Trackers */}
         <div className="grid grid-cols-3 gap-2 pt-3 border-t border-slate-100">
-          <div className="bg-amber-50/60 rounded-2xl p-2.5 border border-amber-100/70">
+          <Card className="gap-0 rounded-2xl border-amber-100/70 bg-amber-50/60 p-2.5 shadow-none">
             <div className="flex items-center gap-1 text-xs font-semibold text-amber-800 mb-1">
               <Droplets className="w-3 h-3 text-amber-600 shrink-0" />
               <span className="truncate">Last Peed</span>
@@ -198,9 +218,9 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
                 {formatClockTime(lastPeeLog.timestamp)}
               </p>
             )}
-          </div>
+          </Card>
 
-          <div className="bg-orange-50/60 rounded-2xl p-2.5 border border-orange-100/70">
+          <Card className="gap-0 rounded-2xl border-orange-100/70 bg-orange-50/60 p-2.5 shadow-none">
             <div className="flex items-center gap-1 text-xs font-semibold text-orange-900 mb-1">
               <span className="text-xs leading-none">💩</span>
               <span className="truncate">Last Pooped</span>
@@ -213,9 +233,9 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
                 {formatClockTime(lastPoopLog.timestamp)}
               </p>
             )}
-          </div>
+          </Card>
 
-          <div className="bg-emerald-50/60 rounded-2xl p-2.5 border border-emerald-100/70">
+          <Card className="gap-0 rounded-2xl border-emerald-100/70 bg-emerald-50/60 p-2.5 shadow-none">
             <div className="flex items-center gap-1 text-xs font-semibold text-emerald-800 mb-1">
               <span className="text-xs leading-none">🥣</span>
               <span className="truncate">Last Fed</span>
@@ -228,12 +248,12 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
                 {formatClockTime(lastMealLog.timestamp)}
               </p>
             )}
-          </div>
+          </Card>
         </div>
-      </div>
+      </Card>
 
       {/* LOCATION SELECTOR - PLACED PROMINENTLY ON TOP OF THE BIG BUTTONS */}
-      <div className="bg-white rounded-3xl p-3.5 border border-slate-200/80 shadow-xs space-y-2">
+      <Card className="gap-2 rounded-3xl p-3.5">
         <div className="flex items-center justify-between px-1">
           <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
             <MapPin className="w-3.5 h-3.5 text-amber-600" />
@@ -245,147 +265,149 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
         </div>
 
         {/* 4 Large Location Selector Tabs */}
-        <div className="grid grid-cols-4 gap-2">
+        <ToggleGroup
+          type="single"
+          value={location}
+          onValueChange={(value) => {
+            if (value) handleLocationSelect(value as PottyLocation);
+          }}
+          className="grid w-full grid-cols-4 gap-2"
+        >
           {LOCATION_OPTIONS.map((opt) => {
-            const isSelected = location === opt.id;
             const isIndoors = opt.id === 'Indoors';
             const shouldShake = isIndoors && isIndoorsShaking;
 
             return (
-              <button
+              <ToggleGroupItem
                 key={opt.id}
-                type="button"
-                onClick={() => handleLocationSelect(opt.id)}
-                className={`py-2.5 px-1 rounded-2xl text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 ${
-                  shouldShake ? 'animate-shake' : ''
-                } ${
-                  isSelected
-                    ? isIndoors
-                      ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30 ring-2 ring-rose-400'
-                      : 'bg-slate-900 text-white shadow-md shadow-slate-900/20 ring-2 ring-slate-700'
-                    : isIndoors
-                    ? 'bg-rose-50 text-rose-700 border border-rose-200/80 hover:bg-rose-100'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80'
-                }`}
+                value={opt.id}
+                aria-label={opt.label}
+                className={cn(
+                  'flex h-auto w-full flex-col gap-1 rounded-2xl border px-1 py-2.5 text-xs font-bold',
+                  shouldShake && 'animate-shake',
+                  isIndoors
+                    ? 'border-rose-200/80 bg-rose-50 text-rose-700 hover:bg-rose-100 data-[state=on]:border-transparent data-[state=on]:bg-rose-600 data-[state=on]:text-white data-[state=on]:shadow-md data-[state=on]:shadow-rose-600/30 data-[state=on]:ring-2 data-[state=on]:ring-rose-400'
+                    : 'border-transparent bg-slate-100 text-slate-700 hover:bg-slate-200/80 data-[state=on]:border-transparent data-[state=on]:bg-slate-900 data-[state=on]:text-white data-[state=on]:shadow-md data-[state=on]:shadow-slate-900/20 data-[state=on]:ring-2 data-[state=on]:ring-slate-700'
+                )}
               >
                 <span className="text-base leading-none">{opt.icon}</span>
                 <span className="leading-tight">{opt.label}</span>
-              </button>
+              </ToggleGroupItem>
             );
           })}
-        </div>
+        </ToggleGroup>
 
         {/* Dynamic warning banner when Indoors is selected with shake feedback */}
         {isAccident && (
-          <div
-            className={`p-2.5 rounded-xl bg-rose-50 border border-rose-200/80 flex items-center gap-2 text-rose-900 text-xs mt-1 transition-all ${
-              isIndoorsShaking ? 'animate-shake' : ''
-            }`}
+          <Alert
+            variant="destructive"
+            className={cn('mt-1', isIndoorsShaking && 'animate-shake')}
           >
-            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-            <p className="font-medium text-[11px] leading-tight">
+            <AlertTriangle />
+            <AlertDescription>
               Indoors is automatically logged as an accident for {dog.name}.
-            </p>
-          </div>
+            </AlertDescription>
+          </Alert>
         )}
-      </div>
+      </Card>
 
       {/* Time Offset Selector (Just now vs 5m/15m/30m ago) */}
       <div className="flex items-center justify-between gap-2 px-1">
         <span className="text-xs font-semibold text-slate-600">Logged time:</span>
-        <div className="flex items-center gap-1 bg-slate-200/70 p-1 rounded-xl">
-          {[
-            { label: 'Now', offset: 0 },
-            { label: '-5m', offset: 5 },
-            { label: '-15m', offset: 15 },
-            { label: '-30m', offset: 30 },
-          ].map((item) => (
-            <button
+        <ToggleGroup
+          type="single"
+          value={String(timeOffsetMinutes)}
+          onValueChange={(value) => {
+            if (!value) return;
+            haptics.triggerTick();
+            setTimeOffsetMinutes(Number(value));
+          }}
+          className="gap-1 rounded-xl bg-slate-200/70 p-1"
+        >
+          {TIME_OFFSETS.map((item) => (
+            <ToggleGroupItem
               key={item.offset}
-              onClick={() => {
-                haptics.triggerTick();
-                setTimeOffsetMinutes(item.offset);
-              }}
-              className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
-                timeOffsetMinutes === item.offset
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
+              value={String(item.offset)}
+              className="h-auto rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 data-[state=on]:bg-white data-[state=on]:text-slate-900 data-[state=on]:shadow-xs"
             >
               {item.label}
-            </button>
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
       </div>
 
       {/* GIGANTIC TACTILE BUTTONS */}
       <div className="grid grid-cols-2 gap-3.5">
         {/* PEE BUTTON */}
-        <motion.button
+        <MotionButton
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.94 }}
           onClick={() => handlePress('pee')}
-          className="relative overflow-hidden group select-none min-h-[160px] rounded-3xl p-5 bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/25 flex flex-col items-center justify-center text-center cursor-pointer border border-amber-300/40 active:shadow-inner"
+          variant="ghost"
+          className="group relative h-auto min-h-[160px] w-full flex-col gap-0 overflow-hidden rounded-3xl border border-amber-300/40 bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 p-5 text-white shadow-lg shadow-amber-500/25 hover:bg-transparent hover:brightness-105"
         >
-          <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-          <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center mb-3 shadow-inner">
+          <span className="absolute inset-0 bg-white/10 opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none" />
+          <span className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center mb-3 shadow-inner">
             <Droplets className="w-9 h-9 text-white drop-shadow-sm" />
-          </div>
+          </span>
           <span className="text-2xl font-extrabold tracking-tight">PEE</span>
           <span className="text-xs font-medium text-amber-100 mt-1">
             Log at {location}
           </span>
-        </motion.button>
+        </MotionButton>
 
         {/* POOP BUTTON */}
-        <motion.button
+        <MotionButton
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.94 }}
           onClick={() => handlePress('poop')}
-          className="relative overflow-hidden group select-none min-h-[160px] rounded-3xl p-5 bg-gradient-to-br from-amber-800 via-stone-800 to-amber-950 text-white shadow-lg shadow-amber-950/20 flex flex-col items-center justify-center text-center cursor-pointer border border-stone-600/40 active:shadow-inner"
+          variant="ghost"
+          className="group relative h-auto min-h-[160px] w-full flex-col gap-0 overflow-hidden rounded-3xl border border-stone-600/40 bg-gradient-to-br from-amber-800 via-stone-800 to-amber-950 p-5 text-white shadow-lg shadow-amber-950/20 hover:bg-transparent hover:brightness-105"
         >
-          <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-          <div className="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-xs flex items-center justify-center mb-3 shadow-inner text-3xl">
+          <span className="absolute inset-0 bg-white/10 opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none" />
+          <span className="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-xs flex items-center justify-center mb-3 shadow-inner text-3xl">
             💩
-          </div>
+          </span>
           <span className="text-2xl font-extrabold tracking-tight">POOP</span>
           <span className="text-xs font-medium text-stone-300 mt-1">
             Log at {location}
           </span>
-        </motion.button>
+        </MotionButton>
       </div>
 
       {/* COMBO BUTTON: BOTH PEE & POOP */}
-      <motion.button
+      <MotionButton
         whileHover={{ scale: 1.01 }}
         whileTap={{ scale: 0.96 }}
         onClick={() => handlePress('both')}
-        className="w-full min-h-[52px] rounded-2xl bg-gradient-to-r from-amber-500 to-stone-800 text-white p-3 shadow-md shadow-slate-900/10 flex items-center justify-center gap-2.5 font-bold text-xs sm:text-sm cursor-pointer border border-amber-400/30 active:scale-95 transition-transform"
+        variant="ghost"
+        className="h-auto min-h-[52px] w-full gap-2.5 rounded-2xl border border-amber-400/30 bg-gradient-to-r from-amber-500 to-stone-800 p-3 text-xs font-bold text-white shadow-md shadow-slate-900/10 hover:bg-transparent hover:brightness-105 sm:text-sm"
       >
         <Sparkles className="w-4 h-4 text-amber-200" />
         <span>Logged Both (Pee + Poop) at {location}</span>
-      </motion.button>
+      </MotionButton>
 
       {/* FEED MEAL BUTTON */}
-      <motion.button
+      <MotionButton
         whileHover={{ scale: 1.01 }}
         whileTap={{ scale: 0.96 }}
         onClick={() => handlePress('meal')}
-        className="w-full min-h-[52px] rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white p-3 shadow-md shadow-emerald-700/15 flex items-center justify-between px-4 sm:px-5 font-bold text-xs sm:text-sm cursor-pointer border border-emerald-400/30 active:scale-95 transition-transform"
+        variant="ghost"
+        className="h-auto min-h-[52px] w-full justify-between gap-2.5 whitespace-normal rounded-2xl border border-emerald-400/30 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 px-4 py-3 text-xs font-bold text-white shadow-md shadow-emerald-700/15 hover:bg-transparent hover:brightness-105 sm:px-5 sm:text-sm"
       >
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-base">
+        <span className="flex items-center gap-2.5">
+          <span className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-base">
             🥣
-          </div>
-          <div className="text-left">
+          </span>
+          <span className="text-left">
             <span className="block leading-tight font-extrabold">LOG MEAL / FED {dog.name.toUpperCase()}</span>
             <span className="text-[10px] font-normal text-emerald-100 block">Compare digestion &amp; potty delay in stats</span>
-          </div>
-        </div>
+          </span>
+        </span>
         <span className="text-[11px] font-bold bg-white/20 px-2.5 py-1 rounded-lg text-emerald-50 shrink-0">
           Feed 🍖
         </span>
-      </motion.button>
+      </MotionButton>
 
       {/* Success Badge Banner */}
       <AnimatePresence>
@@ -394,57 +416,53 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="p-3 bg-emerald-500 text-white rounded-2xl text-center text-xs font-semibold flex items-center justify-center gap-2 shadow-sm"
           >
-            <CheckCircle2 className="w-4 h-4" />
-            <span>
-              {lastLoggedType === 'meal'
-                ? `Recorded Meal for ${dog.name} at ${formatClockTime(currentTime)}! 🥣`
-                : `Recorded ${lastLoggedType.toUpperCase()} for ${dog.name} at ${location}${isAccident ? ' (Accident)' : ''}!`}
-            </span>
+            <Alert className="justify-center gap-2 border-none bg-emerald-500 text-white shadow-sm [&>svg]:text-white">
+              <CheckCircle2 />
+              <AlertDescription className="font-semibold text-white">
+                {lastLoggedType === 'meal'
+                  ? `Recorded Meal for ${dog.name} at ${formatClockTime(currentTime)}! 🥣`
+                  : `Recorded ${lastLoggedType.toUpperCase()} for ${dog.name} at ${location}${isAccident ? ' (Accident)' : ''}!`}
+              </AlertDescription>
+            </Alert>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Optional Quick Note Tray */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden">
-        <button
-          onClick={() => {
-            haptics.triggerTick();
-            setShowNotes(!showNotes);
-          }}
-          className="w-full px-4 py-2.5 flex items-center justify-between text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
-        >
-          <span className="flex items-center gap-2">
-            <FileText className="w-3.5 h-3.5 text-amber-600" />
-            <span>Add Note {notes ? `("${notes}")` : '(Optional)'}</span>
-          </span>
-          {showNotes ? (
-            <ChevronUp className="w-4 h-4 text-slate-400" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-slate-400" />
-          )}
-        </button>
-
-        <AnimatePresence>
-          {showNotes && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="px-4 pb-4 pt-1 flex flex-col gap-2 border-t border-slate-100"
+      <Collapsible open={showNotes} onOpenChange={setShowNotes}>
+        <Card className="gap-0 overflow-hidden rounded-2xl p-0">
+          <CollapsibleTrigger asChild>
+            <Button
+              variant="ghost"
+              onClick={() => haptics.triggerTick()}
+              className="h-auto w-full justify-between rounded-none px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
             >
-              <input
+              <span className="flex items-center gap-2">
+                <FileText className="w-3.5 h-3.5 text-amber-600" />
+                <span>Add Note {notes ? `("${notes}")` : '(Optional)'}</span>
+              </span>
+              {showNotes ? (
+                <ChevronUp className="w-4 h-4 text-slate-400" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-slate-400" />
+              )}
+            </Button>
+          </CollapsibleTrigger>
+
+          <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
+            <div className="px-4 pb-4 pt-2 border-t border-slate-100">
+              <Input
                 type="text"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="e.g. right after meal, sudden urge"
-                className="w-full text-xs px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-amber-500"
+                className="text-xs"
               />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+            </div>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
     </div>
   );
 };

@@ -1,17 +1,26 @@
 import React, { useState } from 'react';
 import {
-  Droplets,
   Calendar,
   Trash2,
-  Filter,
   Plus,
-  MapPin,
-  AlertCircle,
-  FileText,
 } from 'lucide-react';
-import { DogProfile, PottyLog, PottyType } from '../types';
+import { DogProfile, PottyLog } from '../types';
 import { formatClockTime, formatDateLabel } from '../utils/stats';
 import { haptics } from '../utils/haptics';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface HistorySectionProps {
   dog: DogProfile;
@@ -20,13 +29,24 @@ interface HistorySectionProps {
   onOpenRetroModal: () => void;
 }
 
+type FilterType = 'all' | 'pee' | 'poop' | 'meal' | 'accident';
+
+const FILTERS: { id: FilterType; label: string }[] = [
+  { id: 'all', label: 'All Entries' },
+  { id: 'pee', label: '💧 Pees' },
+  { id: 'poop', label: '💩 Poops' },
+  { id: 'meal', label: '🥣 Meals' },
+  { id: 'accident', label: '⚠️ Accidents' },
+];
+
 export const HistorySection: React.FC<HistorySectionProps> = ({
   dog,
   logs,
   onDeleteLog,
   onOpenRetroModal,
 }) => {
-  const [filterType, setFilterType] = useState<'all' | 'pee' | 'poop' | 'meal' | 'accident'>('all');
+  const [filterType, setFilterType] = useState<FilterType>('all');
+  const [pendingDelete, setPendingDelete] = useState<PottyLog | null>(null);
 
   const filteredLogs = logs.filter((log) => {
     if (filterType === 'pee') return log.type === 'pee' || log.type === 'both';
@@ -55,68 +75,65 @@ export const HistorySection: React.FC<HistorySectionProps> = ({
           <p className="text-xs text-slate-500">{filteredLogs.length} events logged</p>
         </div>
 
-        <button
+        <Button
+          variant="dark"
+          size="sm"
           onClick={() => {
             haptics.triggerTick();
             onOpenRetroModal();
           }}
-          className="px-3 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-xs hover:bg-slate-800 active:scale-95 transition-transform"
+          className="rounded-xl"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>Log Past Potty</span>
-        </button>
+        </Button>
       </div>
 
       {/* Filter Chips */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-        {(
-          [
-            { id: 'all', label: 'All Entries' },
-            { id: 'pee', label: '💧 Pees' },
-            { id: 'poop', label: '💩 Poops' },
-            { id: 'meal', label: '🥣 Meals' },
-            { id: 'accident', label: '⚠️ Accidents' },
-          ] as const
-        ).map((item) => (
-          <button
+      <ToggleGroup
+        type="single"
+        value={filterType}
+        onValueChange={(value) => {
+          if (!value) return;
+          haptics.triggerTick();
+          setFilterType(value as FilterType);
+        }}
+        className="w-full justify-start gap-1.5 overflow-x-auto pb-1"
+      >
+        {FILTERS.map((item) => (
+          <ToggleGroupItem
             key={item.id}
-            onClick={() => {
-              haptics.triggerTick();
-              setFilterType(item.id);
-            }}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-              filterType === item.id
-                ? 'bg-amber-600 text-white shadow-xs'
-                : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50'
-            }`}
+            value={item.id}
+            className="h-auto shrink-0 whitespace-nowrap rounded-xl border border-slate-200/80 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 data-[state=on]:border-transparent data-[state=on]:bg-amber-600 data-[state=on]:text-white data-[state=on]:shadow-xs"
           >
             {item.label}
-          </button>
+          </ToggleGroupItem>
         ))}
-      </div>
+      </ToggleGroup>
 
       {/* Empty State */}
       {dateGroups.length === 0 && (
-        <div className="bg-white rounded-3xl p-8 text-center border border-slate-200/80 my-4">
-          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-3">
+        <Card className="my-4 items-center gap-2 rounded-3xl p-8 text-center">
+          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-1">
             <Calendar className="w-6 h-6" />
           </div>
           <h3 className="text-sm font-bold text-slate-900">No logs found</h3>
-          <p className="text-xs text-slate-500 max-w-xs mx-auto mt-1 mb-4">
+          <p className="text-xs text-slate-500 max-w-xs mx-auto mt-1 mb-2">
             {filterType === 'all'
               ? 'No potty events recorded yet. Press the big button to log the first one!'
               : `No entries match the "${filterType}" filter.`}
           </p>
-          <button
+          <Button
+            size="sm"
             onClick={() => {
               haptics.triggerTick();
               onOpenRetroModal();
             }}
-            className="px-4 py-2 bg-amber-600 text-white text-xs font-semibold rounded-xl"
+            className="mt-1"
           >
             Add a Log
-          </button>
-        </div>
+          </Button>
+        </Card>
       )}
 
       {/* Grouped Logs List */}
@@ -133,10 +150,9 @@ export const HistorySection: React.FC<HistorySectionProps> = ({
             </div>
 
             {/* Event Cards */}
-            <div className="bg-white rounded-3xl border border-slate-200/80 divide-y divide-slate-100 overflow-hidden shadow-2xs">
+            <Card className="gap-0 divide-y divide-slate-100 overflow-hidden rounded-3xl p-0 shadow-2xs">
               {groupedLogs[dateLabel].map((log) => {
                 const isPee = log.type === 'pee';
-                const isPoop = log.type === 'poop';
                 const isBoth = log.type === 'both';
                 const isMeal = log.type === 'meal';
 
@@ -148,7 +164,7 @@ export const HistorySection: React.FC<HistorySectionProps> = ({
                     <div className="flex items-center gap-3 min-w-0">
                       {/* Icon */}
                       <div
-                        className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 text-base ${
+                        className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 whitespace-nowrap text-sm ${
                           log.isAccident
                             ? 'bg-rose-100 text-rose-700'
                             : isBoth
@@ -166,8 +182,12 @@ export const HistorySection: React.FC<HistorySectionProps> = ({
                       {/* Content */}
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
+                          {log.isAccident && (
+                            <Badge variant="rose" className="px-1.5 py-0 text-[10px]">
+                              Accident
+                            </Badge>
+                          )}
                           <span className="text-xs font-bold text-slate-900 capitalize">
-                            {log.isAccident ? 'Accident · ' : ''}
                             {isBoth ? 'Pee & Poop' : isMeal ? 'Meal / Fed' : log.type}
                           </span>
                           <span className="text-[11px] font-semibold text-slate-500 tabular-nums">
@@ -193,25 +213,56 @@ export const HistorySection: React.FC<HistorySectionProps> = ({
                     </div>
 
                     {/* Delete action */}
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
                       onClick={() => {
                         haptics.triggerTick();
-                        if (window.confirm('Delete this log entry?')) {
-                          onDeleteLog(log.id);
-                        }
+                        setPendingDelete(log);
                       }}
-                      className="p-2 text-slate-300 hover:text-rose-500 rounded-xl hover:bg-rose-50 transition-colors shrink-0"
+                      className="shrink-0 text-slate-300 hover:bg-rose-50 hover:text-rose-500"
                       title="Delete log"
                     >
                       <Trash2 className="w-4 h-4" />
-                    </button>
+                    </Button>
                   </div>
                 );
               })}
-            </div>
+            </Card>
           </div>
         ))}
       </div>
+
+      {/* Delete confirmation */}
+      <AlertDialog
+        open={!!pendingDelete}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this log entry?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDelete
+                ? `${pendingDelete.type === 'both' ? 'Pee & Poop' : pendingDelete.type} recorded at ${formatClockTime(pendingDelete.timestamp)} on ${formatDateLabel(pendingDelete.timestamp)}.`
+                : ''}{' '}
+              You can undo this right after deleting.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                haptics.triggerTick();
+                if (pendingDelete) onDeleteLog(pendingDelete.id);
+              }}
+            >
+              Delete Log
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
