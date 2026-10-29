@@ -12,9 +12,9 @@ import {
   ChevronUp,
   FileText,
 } from 'lucide-react';
-import { DogProfile, PottyLog, PottyType, PottyLocation } from '../types';
-import { haptics } from '../utils/haptics';
-import { formatTimeAgo, formatClockTime } from '../utils/stats';
+import { DogProfile, PottyLog, PottyType, PottyLocation } from '../../types';
+import { haptics } from '../../utils/haptics';
+import { formatTimeAgo, formatClockTime } from '../../utils/stats';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';

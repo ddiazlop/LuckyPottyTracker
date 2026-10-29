@@ -17,11 +17,11 @@ import {
 } from './utils/storage';
 import { haptics } from './utils/haptics';
 import { AppHeader } from './components/AppHeader';
-import { BigButtonSection } from './components/BigButtonSection';
-import { DashboardSection } from './components/DashboardSection';
-import { HistorySection } from './components/HistorySection';
 import { ProfileModal } from './components/ProfileModal';
 import { RetroactiveLogModal } from './components/RetroactiveLogModal';
+import { BigButtonSection } from './components/sections/BigButtonSection';
+import { DashboardSection } from './components/sections/DashboardSection';
+import { HistorySection } from './components/sections/HistorySection';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Toaster } from '@/components/ui/sonner';
 

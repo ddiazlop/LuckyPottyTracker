@@ -4,9 +4,9 @@ import {
   Trash2,
   Plus,
 } from 'lucide-react';
-import { DogProfile, PottyLog } from '../types';
-import { formatClockTime, formatDateLabel } from '../utils/stats';
-import { haptics } from '../utils/haptics';
+import { DogProfile, PottyLog } from '../../types';
+import { formatClockTime, formatDateLabel } from '../../utils/stats';
+import { haptics } from '../../utils/haptics';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

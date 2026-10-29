@@ -24,15 +24,15 @@ import {
   Tooltip,
   CartesianGrid,
 } from 'recharts';
-import { DogProfile, PottyLog, PottyStatistics, PottyLocation } from '../types';
+import { DogProfile, PottyLog, PottyStatistics, PottyLocation } from '../../types';
 import {
   calculateStatistics,
   formatClockTime,
   getDailyTrendsLast7Days,
   formatTimeAgo,
-} from '../utils/stats';
-import { haptics } from '../utils/haptics';
-import { generateOfflineCoachInsights, AICoachData } from '../utils/aiCoach';
+} from '../../utils/stats';
+import { haptics } from '../../utils/haptics';
+import { generateOfflineCoachInsights, AICoachData } from '../../utils/aiCoach';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
