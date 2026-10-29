@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { CircleDot, BarChart3, History, Settings } from 'lucide-react';
+import { CircleDot, BarChart3, History } from 'lucide-react';
 import { toast } from 'sonner';
 import { DogProfile, PottyLog } from './types';
 import {
@@ -16,12 +16,12 @@ import {
   saveProfile,
 } from './utils/storage';
 import { haptics } from './utils/haptics';
+import { AppHeader } from './components/AppHeader';
 import { BigButtonSection } from './components/BigButtonSection';
 import { DashboardSection } from './components/DashboardSection';
 import { HistorySection } from './components/HistorySection';
 import { ProfileModal } from './components/ProfileModal';
 import { RetroactiveLogModal } from './components/RetroactiveLogModal';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Toaster } from '@/components/ui/sonner';
 
@@ -128,49 +128,11 @@ export default function App() {
       onValueChange={handleTabChange}
       className="min-h-screen flex-col justify-between gap-0 bg-slate-100/70 text-slate-900 selection:bg-amber-200"
     >
-      {/* Top App Bar */}
-      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 py-3">
-        <div className="max-w-xl mx-auto flex items-center justify-between gap-4">
-          {/* Brand */}
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 flex items-center justify-center text-white shadow-xs">
-              <span className="text-sm">🐾</span>
-            </div>
-            <div>
-              <h1 className="text-base font-bold text-slate-900 tracking-tight leading-none">
-                Paws &amp; Pots
-              </h1>
-              <p className="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">
-                {dog.name}&apos;s Potty Tracker
-              </p>
-            </div>
-          </div>
-
-          {/* Top Actions: Desktop Navigation + Settings */}
-          <div className="flex items-center gap-2">
-            <TabsList className="hidden sm:inline-flex">
-              {TAB_ITEMS.map((tab) => (
-                <TabsTrigger key={tab.id} value={tab.id}>
-                  {tab.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                haptics.triggerTick();
-                setShowProfileModal(true);
-              }}
-              className="rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-              aria-label="Settings and Profile"
-            >
-              <Settings className="size-5" />
-            </Button>
-          </div>
-        </div>
-      </header>
+      <AppHeader
+        dogName={dog.name}
+        navigationItems={TAB_ITEMS}
+        onOpenSettings={() => setShowProfileModal(true)}
+      />
 
       {/* Main Content Area */}
       <main className="flex-1 pb-24 pt-2">
