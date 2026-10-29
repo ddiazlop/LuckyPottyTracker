@@ -189,7 +189,9 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://0.0.0.0:${PORT}`);
+    // 0.0.0.0 is only the bind address; browsers must use localhost / LAN IP.
+    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`LAN / Android device access: http://<your-lan-ip>:${PORT}`);
   });
 }
 
