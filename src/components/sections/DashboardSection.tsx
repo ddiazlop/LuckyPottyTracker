@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Clock,
   Droplets,
-  Sparkles,
   ShieldCheck,
   TrendingUp,
   Sun,
@@ -10,9 +9,6 @@ import {
   Moon,
   Sunrise,
   MapPin,
-  Bot,
-  RefreshCw,
-  Lightbulb,
   CalendarDays,
 } from 'lucide-react';
 import {
@@ -32,11 +28,8 @@ import {
   formatTimeAgo,
 } from '../../utils/stats';
 import { haptics } from '../../utils/haptics';
-import { generateOfflineCoachInsights, AICoachData } from '../../utils/aiCoach';
-import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -57,10 +50,6 @@ const METRIC_TABS: { id: MetricTab; label: string }[] = [
 export const DashboardSection: React.FC<DashboardSectionProps> = ({ dog, logs }) => {
   const [metricTab, setMetricTab] = useState<MetricTab>('all');
   const [selectedHour, setSelectedHour] = useState<number | null>(null);
-
-  // AI Coach state
-  const [coachData, setCoachData] = useState<AICoachData | null>(null);
-  const [isCoachLoading, setIsCoachLoading] = useState<boolean>(false);
 
   const stats: PottyStatistics = calculateStatistics(logs, dog.targetIntervalHours);
   const dailyTrends = getDailyTrendsLast7Days(logs);
@@ -90,123 +79,8 @@ export const DashboardSection: React.FC<DashboardSectionProps> = ({ dog, logs })
     stats.timeOfDayBuckets.evening +
     stats.timeOfDayBuckets.night;
 
-  // Generate AI-assisted Potty Training Coach insights (100% Offline Client-Side Heuristic)
-  const refreshAICoach = useCallback(
-    (withSimulation = false) => {
-      if (withSimulation) {
-        setIsCoachLoading(true);
-        setTimeout(() => {
-          const insights = generateOfflineCoachInsights(dog, logs, stats, locationCounts);
-          setCoachData(insights);
-          setIsCoachLoading(false);
-        }, 250);
-      } else {
-        const insights = generateOfflineCoachInsights(dog, logs, stats, locationCounts);
-        setCoachData(insights);
-      }
-    },
-    [dog, logs, stats, locationCounts]
-  );
-
-  // Initial load & auto-refresh of offline AI coach
-  useEffect(() => {
-    refreshAICoach(false);
-  }, [dog.id, logs.length, dog.targetIntervalHours, dog.lifeStage]);
-
   return (
     <div className="w-full max-w-xl mx-auto px-4 py-3 flex flex-col gap-4">
-      {/* AI-ASSISTED COACH SECTION AT THE TOP */}
-      <Card className="relative gap-0 overflow-hidden border-slate-800 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-5 text-white shadow-lg shadow-slate-900/20">
-        <div className="absolute -top-12 -right-12 w-40 h-40 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
-
-        <div className="flex items-center justify-between gap-2 mb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold uppercase tracking-wider text-amber-400 block leading-tight">
-                  AI Potty Coach
-                </span>
-                <Badge variant="dark" className="rounded-full px-1.5 py-0 text-[9px] border-amber-400/30 bg-amber-400/20 text-amber-300">
-                  100% Offline
-                </Badge>
-              </div>
-              <span className="text-[10px] text-slate-400 block">Personalized for {dog.name}</span>
-            </div>
-          </div>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              haptics.triggerTick();
-              refreshAICoach(true);
-            }}
-            disabled={isCoachLoading}
-            className="rounded-xl bg-white/10 px-2.5 text-slate-200 hover:bg-white/15 hover:text-white"
-            title="Recalculate AI Analysis"
-          >
-            <RefreshCw className={cn('w-3 h-3', isCoachLoading && 'animate-spin')} />
-            <span>{isCoachLoading ? 'Analyzing...' : 'Refresh'}</span>
-          </Button>
-        </div>
-
-        {isCoachLoading && !coachData ? (
-          <div className="py-6 flex flex-col items-center justify-center gap-2">
-            <Bot className="w-8 h-8 text-amber-400 animate-pulse" />
-            <p className="text-xs text-slate-300">Analyzing {dog.name}&apos;s feeding &amp; potty patterns...</p>
-          </div>
-        ) : coachData ? (
-          <div className="space-y-3.5">
-            <p className="text-sm font-medium text-slate-100 leading-relaxed">
-              {coachData.summary}
-            </p>
-
-            <div className="grid grid-cols-1 gap-2 pt-1">
-              <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-xs">
-                <span className="text-[11px] font-bold text-amber-300 flex items-center gap-1 mb-1">
-                  <TrendingUp className="w-3.5 h-3.5" />
-                  <span>Pattern Spotted</span>
-                </span>
-                <p className="text-slate-200 text-[11px] leading-relaxed">{coachData.keyPattern}</p>
-              </div>
-
-              <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs">
-                <span className="text-[11px] font-bold text-amber-400 flex items-center gap-1 mb-1">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>Recommended Next Step</span>
-                </span>
-                <p className="text-amber-100 text-[11px] font-medium leading-relaxed">
-                  {coachData.recommendedNextStep}
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-white/10">
-              <span className="text-xs font-bold text-slate-300 block mb-2 flex items-center gap-1.5">
-                <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
-                <span>Coach Action Tips</span>
-              </span>
-              <div className="space-y-1.5">
-                {coachData.tips.map((tip, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-start gap-2 text-xs text-slate-200 bg-white/5 p-2.5 rounded-xl border border-white/5"
-                  >
-                    <span className="w-4 h-4 rounded-full bg-amber-400/20 text-amber-300 font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
-                      {idx + 1}
-                    </span>
-                    <span className="text-[11px] leading-snug">{tip}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : null}
-      </Card>
-
       {/* FEEDING & POTTY CORRELATION STATISTIC (EXPLICIT USER COMPARISON) */}
       <Card className="gap-0 p-4">
         <div className="flex items-center justify-between gap-2 mb-2">
