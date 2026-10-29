@@ -41,7 +41,6 @@ export default function App() {
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [showRetroModal, setShowRetroModal] = useState<boolean>(false);
 
-  // Sync state to storage
   useEffect(() => {
     saveLogs(logs);
   }, [logs]);
@@ -55,7 +54,6 @@ export default function App() {
     setActiveTab(value as TabId);
   };
 
-  // Log a new potty event
   const handleLogPotty = (newLogData: Omit<PottyLog, 'id'>) => {
     const newLog: PottyLog = {
       ...newLogData,
@@ -64,7 +62,6 @@ export default function App() {
 
     setLogs((prev) => [newLog, ...prev]);
 
-    // Show undo toast
     const actionLabel =
       newLog.type === 'meal'
         ? 'Meal / Feeding'
