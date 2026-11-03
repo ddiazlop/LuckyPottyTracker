@@ -2,7 +2,7 @@ export type PottyType = 'pee' | 'poop' | 'both' | 'meal';
 
 export type PottyLocation = 'Walk' | 'Terrace' | 'Park' | 'Indoors';
 
-export interface PottyLog {
+export interface PottyRecord {
   id: string;
   dogId: string;
   type: PottyType;
@@ -34,7 +34,7 @@ export interface TimeOfDayDistribution {
 }
 
 export interface PottyStatistics {
-  totalLogs: number;
+  totalRecords: number;
   totalPees: number;
   totalPoops: number;
   totalMeals: number;

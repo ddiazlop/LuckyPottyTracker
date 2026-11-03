@@ -12,7 +12,7 @@ import {
   ChevronUp,
   FileText,
 } from 'lucide-react';
-import { DogProfile, PottyLog, PottyType, PottyLocation } from '../../types';
+import { DogProfile, PottyRecord, PottyType, PottyLocation } from '../../types';
 import { haptics } from '../../utils/haptics';
 import { formatTimeAgo, formatClockTime } from '../../utils/stats';
 import { cn } from '@/lib/utils';
@@ -30,8 +30,8 @@ import {
 
 interface BigButtonSectionProps {
   dog: DogProfile;
-  logs: PottyLog[];
-  onLogPotty: (log: Omit<PottyLog, 'id'>) => void;
+  records: PottyRecord[];
+  onAddRecord: (record: Omit<PottyRecord, 'id'>) => void;
   onOpenRetroModal: () => void;
 }
 
@@ -53,8 +53,8 @@ const MotionButton = motion.create(Button);
 
 export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
   dog,
-  logs,
-  onLogPotty,
+  records,
+  onAddRecord,
   onOpenRetroModal,
 }) => {
   const [location, setLocation] = useState<PottyLocation>('Walk');
@@ -62,7 +62,7 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
   const [timeOffsetMinutes, setTimeOffsetMinutes] = useState<number>(0);
   const [showNotes, setShowNotes] = useState<boolean>(false);
   const [notes, setNotes] = useState<string>('');
-  const [lastLoggedType, setLastLoggedType] = useState<PottyType | null>(null);
+  const [lastRecordedType, setLastRecordedType] = useState<PottyType | null>(null);
 
   // If it's Indoors, it's ALWAYS an accident
   const isAccident = location === 'Indoors';
@@ -87,12 +87,12 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
   }, []);
 
   // Calculate last pee, poop, and meal timestamps
-  const lastPeeLog = logs.find((l) => l.type === 'pee' || l.type === 'both');
-  const lastPoopLog = logs.find((l) => l.type === 'poop' || l.type === 'both');
-  const lastMealLog = logs.find((l) => l.type === 'meal');
+  const lastPeeRecord = records.find((l) => l.type === 'pee' || l.type === 'both');
+  const lastPoopRecord = records.find((l) => l.type === 'poop' || l.type === 'both');
+  const lastMealRecord = records.find((l) => l.type === 'meal');
 
   // Elapsed hours for urgency state
-  const mostRecentTimestamp = Math.max(lastPeeLog?.timestamp || 0, lastPoopLog?.timestamp || 0);
+  const mostRecentTimestamp = Math.max(lastPeeRecord?.timestamp || 0, lastPoopRecord?.timestamp || 0);
   const elapsedHours = mostRecentTimestamp > 0
     ? (currentTime - mostRecentTimestamp) / (1000 * 60 * 60)
     : 0;
@@ -101,13 +101,13 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
   const handlePress = (type: PottyType) => {
     // 1. Tactile haptic & sound feedback
     if (type === 'pee') {
-      haptics.triggerPeeLog();
+      haptics.triggerPeeFeedback();
     } else if (type === 'poop') {
-      haptics.triggerPoopLog();
+      haptics.triggerPoopFeedback();
     } else if (type === 'both') {
-      haptics.triggerBothLog();
+      haptics.triggerBothFeedback();
     } else {
-      haptics.triggerMealLog();
+      haptics.triggerMealFeedback();
     }
 
     // 2. Playful confetti celebration
@@ -129,21 +129,21 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
     }
 
     // 3. Calculate timestamp based on selected offset
-    const logTimestamp = currentTime - timeOffsetMinutes * 60 * 1000;
+    const recordTimestamp = currentTime - timeOffsetMinutes * 60 * 1000;
 
-    // 4. Submit log (Meals indoors are normal and not accidents)
-    onLogPotty({
+    // 4. Submit record (Meals indoors are normal and not accidents)
+    onAddRecord({
       dogId: dog.id,
       type,
-      timestamp: logTimestamp,
+      timestamp: recordTimestamp,
       isAccident: type === 'meal' ? false : isAccident,
       location,
       notes: notes.trim() || undefined,
     });
 
     // Flash confirmation
-    setLastLoggedType(type);
-    setTimeout(() => setLastLoggedType(null), 2500);
+    setLastRecordedType(type);
+    setTimeout(() => setLastRecordedType(null), 2500);
 
     // Reset one-time detail states
     if (notes) setNotes('');
@@ -199,7 +199,7 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
             className="h-auto rounded-xl bg-slate-100 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-200"
           >
             <Clock className="w-3.5 h-3.5 text-slate-500" />
-            <span>Past Log</span>
+            <span>Past Record</span>
           </Button>
         </div>
 
@@ -211,11 +211,11 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
               <span className="truncate">Last Peed</span>
             </div>
             <p className="text-xs font-bold text-slate-800 tabular-nums">
-              {formatTimeAgo(lastPeeLog?.timestamp ?? null, currentTime)}
+              {formatTimeAgo(lastPeeRecord?.timestamp ?? null, currentTime)}
             </p>
-            {lastPeeLog && (
+            {lastPeeRecord && (
               <p className="text-[10px] text-slate-500 mt-0.5 truncate">
-                {formatClockTime(lastPeeLog.timestamp)}
+                {formatClockTime(lastPeeRecord.timestamp)}
               </p>
             )}
           </Card>
@@ -226,11 +226,11 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
               <span className="truncate">Last Pooped</span>
             </div>
             <p className="text-xs font-bold text-slate-800 tabular-nums">
-              {formatTimeAgo(lastPoopLog?.timestamp ?? null, currentTime)}
+              {formatTimeAgo(lastPoopRecord?.timestamp ?? null, currentTime)}
             </p>
-            {lastPoopLog && (
+            {lastPoopRecord && (
               <p className="text-[10px] text-slate-500 mt-0.5 truncate">
-                {formatClockTime(lastPoopLog.timestamp)}
+                {formatClockTime(lastPoopRecord.timestamp)}
               </p>
             )}
           </Card>
@@ -241,11 +241,11 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
               <span className="truncate">Last Fed</span>
             </div>
             <p className="text-xs font-bold text-slate-800 tabular-nums">
-              {formatTimeAgo(lastMealLog?.timestamp ?? null, currentTime)}
+              {formatTimeAgo(lastMealRecord?.timestamp ?? null, currentTime)}
             </p>
-            {lastMealLog && (
+            {lastMealRecord && (
               <p className="text-[10px] text-slate-500 mt-0.5 truncate">
-                {formatClockTime(lastMealLog.timestamp)}
+                {formatClockTime(lastMealRecord.timestamp)}
               </p>
             )}
           </Card>
@@ -305,7 +305,7 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
           >
             <AlertTriangle />
             <AlertDescription>
-              Indoors is automatically logged as an accident for {dog.name}.
+              Indoors is automatically recorded as an accident for {dog.name}.
             </AlertDescription>
           </Alert>
         )}
@@ -313,7 +313,7 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
 
       {/* Time Offset Selector (Just now vs 5m/15m/30m ago) */}
       <div className="flex items-center justify-between gap-2 px-1">
-        <span className="text-xs font-semibold text-slate-600">Logged time:</span>
+        <span className="text-xs font-semibold text-slate-600">Recorded time:</span>
         <ToggleGroup
           type="single"
           value={String(timeOffsetMinutes)}
@@ -352,7 +352,7 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
           </span>
           <span className="text-2xl font-extrabold tracking-tight">PEE</span>
           <span className="text-xs font-medium text-amber-100 mt-1">
-            Log at {location}
+            Record at {location}
           </span>
         </MotionButton>
 
@@ -370,7 +370,7 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
           </span>
           <span className="text-2xl font-extrabold tracking-tight">POOP</span>
           <span className="text-xs font-medium text-stone-300 mt-1">
-            Log at {location}
+            Record at {location}
           </span>
         </MotionButton>
       </div>
@@ -384,7 +384,7 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
         className="h-auto min-h-[52px] w-full gap-2.5 rounded-2xl border border-amber-400/30 bg-gradient-to-r from-amber-500 to-stone-800 p-3 text-xs font-bold text-white shadow-md shadow-slate-900/10 hover:bg-transparent hover:brightness-105 sm:text-sm"
       >
         <Sparkles className="w-4 h-4 text-amber-200" />
-        <span>Logged Both (Pee + Poop) at {location}</span>
+        <span>Recorded Both (Pee + Poop) at {location}</span>
       </MotionButton>
 
       {/* FEED MEAL BUTTON */}
@@ -411,7 +411,7 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
 
       {/* Success Badge Banner */}
       <AnimatePresence>
-        {lastLoggedType && (
+        {lastRecordedType && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -420,9 +420,9 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
             <Alert className="justify-center gap-2 border-none bg-emerald-500 text-white shadow-sm [&>svg]:text-white">
               <CheckCircle2 />
               <AlertDescription className="font-semibold text-white">
-                {lastLoggedType === 'meal'
+                {lastRecordedType === 'meal'
                   ? `Recorded Meal for ${dog.name} at ${formatClockTime(currentTime)}! 🥣`
-                  : `Recorded ${lastLoggedType.toUpperCase()} for ${dog.name} at ${location}${isAccident ? ' (Accident)' : ''}!`}
+                  : `Recorded ${lastRecordedType.toUpperCase()} for ${dog.name} at ${location}${isAccident ? ' (Accident)' : ''}!`}
               </AlertDescription>
             </Alert>
           </motion.div>

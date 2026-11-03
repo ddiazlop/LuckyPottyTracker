@@ -20,7 +20,7 @@ import {
   Tooltip,
   CartesianGrid,
 } from 'recharts';
-import { DogProfile, PottyLog, PottyStatistics, PottyLocation } from '../../types';
+import { DogProfile, PottyRecord, PottyStatistics, PottyLocation } from '../../types';
 import {
   calculateStatistics,
   formatClockTime,
@@ -35,7 +35,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface DashboardSectionProps {
   dog: DogProfile;
-  logs: PottyLog[];
+  records: PottyRecord[];
 }
 
 type MetricTab = 'all' | 'pee' | 'poop' | 'meal';
@@ -47,19 +47,19 @@ const METRIC_TABS: { id: MetricTab; label: string }[] = [
   { id: 'meal', label: 'Meal' },
 ];
 
-export const DashboardSection: React.FC<DashboardSectionProps> = ({ dog, logs }) => {
+export const DashboardSection: React.FC<DashboardSectionProps> = ({ dog, records }) => {
   const [metricTab, setMetricTab] = useState<MetricTab>('all');
   const [selectedHour, setSelectedHour] = useState<number | null>(null);
 
-  const stats: PottyStatistics = calculateStatistics(logs, dog.targetIntervalHours);
-  const dailyTrends = getDailyTrendsLast7Days(logs);
+  const stats: PottyStatistics = calculateStatistics(records, dog.targetIntervalHours);
+  const dailyTrends = getDailyTrendsLast7Days(records);
 
   // Location counts for Lucky
   const locationCounts: Record<PottyLocation, number> = {
-    Walk: logs.filter((l) => l.location === 'Walk').length,
-    Terrace: logs.filter((l) => l.location === 'Terrace').length,
-    Park: logs.filter((l) => l.location === 'Park').length,
-    Indoors: logs.filter((l) => l.location === 'Indoors' || l.isAccident).length,
+    Walk: records.filter((l) => l.location === 'Walk').length,
+    Terrace: records.filter((l) => l.location === 'Terrace').length,
+    Park: records.filter((l) => l.location === 'Park').length,
+    Indoors: records.filter((l) => l.location === 'Indoors' || l.isAccident).length,
   };
 
   // Find max value in hourly distribution for proper scaling
@@ -88,7 +88,7 @@ export const DashboardSection: React.FC<DashboardSectionProps> = ({ dog, logs })
             <span className="text-base leading-none">🥣</span>
             <span>Feeding vs. Potty Correlation</span>
           </h3>
-          <Badge variant="emerald">{stats.totalMeals} meals logged</Badge>
+          <Badge variant="emerald">{stats.totalMeals} meals recorded</Badge>
         </div>
         <p className="text-[11px] text-slate-500 mb-3">
           Compares meal intake with digestion timing to pinpoint post-meal walk windows
@@ -240,7 +240,7 @@ export const DashboardSection: React.FC<DashboardSectionProps> = ({ dog, logs })
             </span>
           </div>
           <div className="p-2 rounded-xl bg-slate-50">
-            <span className="text-[10px] text-slate-500 block">Today&apos;s Logs</span>
+            <span className="text-[10px] text-slate-500 block">Today&apos;s Records</span>
             <span className="text-xs font-bold text-slate-800 tabular-nums">
               {dailyTrends.find((d) => d.isToday)?.total ?? 0} events
             </span>
@@ -461,7 +461,7 @@ export const DashboardSection: React.FC<DashboardSectionProps> = ({ dog, logs })
           <span>Location Distribution</span>
         </h3>
         <p className="text-[11px] text-slate-500 mb-3">
-          Breakdown across {logs.length} logged events for {dog.name}
+          Breakdown across {records.length} recorded events for {dog.name}
         </p>
 
         <div className="grid grid-cols-4 gap-2 text-center">
@@ -471,7 +471,7 @@ export const DashboardSection: React.FC<DashboardSectionProps> = ({ dog, logs })
               {locationCounts.Walk}
             </span>
             <span className="text-[10px] text-amber-700 block mt-0.5 tabular-nums">
-              {logs.length > 0 ? Math.round((locationCounts.Walk / logs.length) * 100) : 0}%
+              {records.length > 0 ? Math.round((locationCounts.Walk / records.length) * 100) : 0}%
             </span>
           </div>
 
@@ -481,7 +481,7 @@ export const DashboardSection: React.FC<DashboardSectionProps> = ({ dog, logs })
               {locationCounts.Terrace}
             </span>
             <span className="text-[10px] text-sky-700 block mt-0.5 tabular-nums">
-              {logs.length > 0 ? Math.round((locationCounts.Terrace / logs.length) * 100) : 0}%
+              {records.length > 0 ? Math.round((locationCounts.Terrace / records.length) * 100) : 0}%
             </span>
           </div>
 
@@ -491,7 +491,7 @@ export const DashboardSection: React.FC<DashboardSectionProps> = ({ dog, logs })
               {locationCounts.Park}
             </span>
             <span className="text-[10px] text-emerald-700 block mt-0.5 tabular-nums">
-              {logs.length > 0 ? Math.round((locationCounts.Park / logs.length) * 100) : 0}%
+              {records.length > 0 ? Math.round((locationCounts.Park / records.length) * 100) : 0}%
             </span>
           </div>
 

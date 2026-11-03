@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Clock, AlertTriangle } from 'lucide-react';
-import { DogProfile, PottyLog, PottyType, PottyLocation } from '../types';
+import { DogProfile, PottyRecord, PottyType, PottyLocation } from '../types';
 import { haptics } from '../utils/haptics';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -17,11 +17,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-interface RetroactiveLogModalProps {
+interface RetroactiveRecordModalProps {
   isOpen: boolean;
   onClose: () => void;
   dog: DogProfile;
-  onAddLog: (log: Omit<PottyLog, 'id'>) => void;
+  onAddRecord: (record: Omit<PottyRecord, 'id'>) => void;
 }
 
 const AVAILABLE_LOCATIONS: PottyLocation[] = ['Walk', 'Terrace', 'Park', 'Indoors'];
@@ -43,11 +43,11 @@ const toDateInputValue = (date: Date) => {
 const toTimeInputValue = (date: Date) =>
   `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 
-export const RetroactiveLogModal: React.FC<RetroactiveLogModalProps> = ({
+export const RetroactiveRecordModal: React.FC<RetroactiveRecordModalProps> = ({
   isOpen,
   onClose,
   dog,
-  onAddLog,
+  onAddRecord,
 }) => {
   const [date, setDate] = useState<string>(toDateInputValue(new Date()));
   const [time, setTime] = useState<string>(toTimeInputValue(new Date()));
@@ -74,12 +74,12 @@ export const RetroactiveLogModal: React.FC<RetroactiveLogModalProps> = ({
     const [hr, mn] = time.split(':').map(Number);
     const targetDate = new Date(yr, mo - 1, dy, hr, mn, 0);
 
-    if (type === 'pee') haptics.triggerPeeLog();
-    else if (type === 'poop') haptics.triggerPoopLog();
-    else if (type === 'both') haptics.triggerBothLog();
-    else haptics.triggerMealLog();
+    if (type === 'pee') haptics.triggerPeeFeedback();
+    else if (type === 'poop') haptics.triggerPoopFeedback();
+    else if (type === 'both') haptics.triggerBothFeedback();
+    else haptics.triggerMealFeedback();
 
-    onAddLog({
+    onAddRecord({
       dogId: dog.id,
       type,
       timestamp: targetDate.getTime(),
@@ -102,7 +102,7 @@ export const RetroactiveLogModal: React.FC<RetroactiveLogModalProps> = ({
         <DialogHeader>
           <DialogTitle>
             <Clock className="w-5 h-5 text-amber-600" />
-            Log Past Event
+            Record Past Event
           </DialogTitle>
           <DialogDescription>
             Backfill something {dog.name} did earlier today or on a previous day.
@@ -232,7 +232,7 @@ export const RetroactiveLogModal: React.FC<RetroactiveLogModalProps> = ({
             <Button type="button" variant="ghost" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">Save Past Log</Button>
+            <Button type="submit">Save Past Record</Button>
           </DialogFooter>
         </form>
       </DialogContent>

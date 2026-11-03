@@ -9,7 +9,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { DogProfile, PottyLog, DogLifeStage } from '../types';
+import { DogProfile, PottyRecord, DogLifeStage } from '../types';
 import { haptics } from '../utils/haptics';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -46,8 +46,8 @@ interface ProfileModalProps {
   onSaveProfile: (profile: DogProfile) => void;
   onResetData: () => void;
   onLoadSampleData: () => void;
-  logs: PottyLog[];
-  onImportLogs: (logs: PottyLog[]) => void;
+  records: PottyRecord[];
+  onImportRecords: (records: PottyRecord[]) => Promise<boolean>;
 }
 
 const LIFE_STAGE_STYLES: Record<DogLifeStage, string> = {
@@ -66,8 +66,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   onSaveProfile,
   onResetData,
   onLoadSampleData,
-  logs,
-  onImportLogs,
+  records,
+  onImportRecords,
 }) => {
   const [name, setName] = useState(dog.name);
   const [breed, setBreed] = useState(dog.breed);
@@ -93,32 +93,35 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
   const handleExport = () => {
     haptics.triggerTick();
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(logs, null, 2));
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(records, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `${dog.name.toLowerCase()}_potty_logs_${Date.now()}.json`);
+    downloadAnchor.setAttribute('download', `${dog.name.toLowerCase()}_potty_records_${Date.now()}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
   };
 
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+
     const fileReader = new FileReader();
-    if (e.target.files && e.target.files[0]) {
-      fileReader.readAsText(e.target.files[0], 'UTF-8');
-      fileReader.onload = (event) => {
-        try {
-          const parsed = JSON.parse(event.target?.result as string);
-          if (Array.isArray(parsed)) {
-            onImportLogs(parsed);
-            haptics.triggerBothLog();
-            toast.success(`Successfully imported ${parsed.length} logs!`);
-          }
-        } catch {
-          toast.error('Invalid JSON file format.');
-        }
-      };
-    }
+    fileReader.readAsText(selectedFile, 'UTF-8');
+    fileReader.onload = async (event) => {
+      try {
+        const parsed = JSON.parse(event.target?.result as string);
+        if (!Array.isArray(parsed)) return;
+
+        const isImported = await onImportRecords(parsed);
+        if (!isImported) return;
+
+        haptics.triggerBothFeedback();
+        toast.success(`Successfully imported ${parsed.length} records!`);
+      } catch {
+        toast.error('Invalid JSON file format.');
+      }
+    };
   };
 
   const handleLifeStageChange = (value: string) => {
@@ -253,7 +256,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 onCheckedChange={(next) => {
                   setHapticsEnabled(next);
                   haptics.setHapticsEnabled(next);
-                  if (next) haptics.triggerPeeLog();
+                  if (next) haptics.triggerPeeFeedback();
                 }}
               />
             </div>
@@ -274,7 +277,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 onCheckedChange={(next) => {
                   setSoundEnabled(next);
                   haptics.setSoundEnabled(next);
-                  if (next) haptics.triggerPeeLog();
+                  if (next) haptics.triggerPeeFeedback();
                 }}
               />
             </div>
@@ -324,20 +327,20 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     onClick={() => haptics.triggerUndo()}
                     className="h-auto p-0 text-xs font-medium text-rose-600 hover:text-rose-700"
                   >
-                    Clear All Logs
+                    Clear All Records
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Clear all potty records?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This removes every logged event for {dog.name} from this device. This action
+                      This removes every recorded event for {dog.name} from this device. This action
                       cannot be undone.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={onResetData}>Clear All Logs</AlertDialogAction>
+                    <AlertDialogAction onClick={onResetData}>Clear All Records</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>

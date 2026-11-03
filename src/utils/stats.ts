@@ -1,4 +1,4 @@
-import { PottyLog, PottyStatistics, TimeOfDayDistribution } from '../types';
+import { PottyRecord, PottyStatistics, TimeOfDayDistribution } from '../types';
 
 export interface DailyPottyTrend {
   dateKey: string;
@@ -12,11 +12,11 @@ export interface DailyPottyTrend {
   total: number;
 }
 
-export function calculateStatistics(logs: PottyLog[], targetIntervalHours: number = 4): PottyStatistics {
-  const totalLogs = logs.length;
-  if (totalLogs === 0) {
+export function calculateStatistics(records: PottyRecord[], targetIntervalHours: number = 4): PottyStatistics {
+  const totalRecords = records.length;
+  if (totalRecords === 0) {
     return {
-      totalLogs: 0,
+      totalRecords: 0,
       totalPees: 0,
       totalPoops: 0,
       totalMeals: 0,
@@ -56,47 +56,47 @@ export function calculateStatistics(logs: PottyLog[], targetIntervalHours: numbe
 
   const datesSeen = new Set<string>();
 
-  // Sort logs by timestamp ascending for hold-time intervals and meal correlation
-  const sortedLogs = [...logs].sort((a, b) => a.timestamp - b.timestamp);
+  // Sort records by timestamp ascending for hold-time intervals and meal correlation
+  const sortedRecords = [...records].sort((a, b) => a.timestamp - b.timestamp);
 
   const holdIntervalsHours: number[] = [];
 
-  for (let i = 0; i < sortedLogs.length; i++) {
-    const log = sortedLogs[i];
-    const dateObj = new Date(log.timestamp);
+  for (let i = 0; i < sortedRecords.length; i++) {
+    const record = sortedRecords[i];
+    const dateObj = new Date(record.timestamp);
     const hour = dateObj.getHours();
     const dateKey = `${dateObj.getFullYear()}-${dateObj.getMonth() + 1}-${dateObj.getDate()}`;
     datesSeen.add(dateKey);
 
-    const isPee = log.type === 'pee' || log.type === 'both';
-    const isPoop = log.type === 'poop' || log.type === 'both';
-    const isMeal = log.type === 'meal';
+    const isPee = record.type === 'pee' || record.type === 'both';
+    const isPoop = record.type === 'poop' || record.type === 'both';
+    const isMeal = record.type === 'meal';
 
     if (isPee) {
       totalPees++;
       hourlyData[hour].peecount++;
-      if (!lastPeeTimestamp || log.timestamp > lastPeeTimestamp) {
-        lastPeeTimestamp = log.timestamp;
+      if (!lastPeeTimestamp || record.timestamp > lastPeeTimestamp) {
+        lastPeeTimestamp = record.timestamp;
       }
     }
     if (isPoop) {
       totalPoops++;
       hourlyData[hour].poopcount++;
-      if (!lastPoopTimestamp || log.timestamp > lastPoopTimestamp) {
-        lastPoopTimestamp = log.timestamp;
+      if (!lastPoopTimestamp || record.timestamp > lastPoopTimestamp) {
+        lastPoopTimestamp = record.timestamp;
       }
     }
     if (isMeal) {
       totalMeals++;
       hourlyData[hour].mealcount++;
-      if (!lastMealTimestamp || log.timestamp > lastMealTimestamp) {
-        lastMealTimestamp = log.timestamp;
+      if (!lastMealTimestamp || record.timestamp > lastMealTimestamp) {
+        lastMealTimestamp = record.timestamp;
       }
     }
 
     hourlyData[hour].total++;
 
-    if (log.isAccident) {
+    if (record.isAccident) {
       totalAccidents++;
     }
 
@@ -113,9 +113,9 @@ export function calculateStatistics(logs: PottyLog[], targetIntervalHours: numbe
 
     // Interval between consecutive potty events on the same calendar day (daytime hold)
     if (i > 0 && !isMeal) {
-      const prevLog = sortedLogs[i - 1];
-      if (prevLog.type !== 'meal') {
-        const diffHours = (log.timestamp - prevLog.timestamp) / (1000 * 60 * 60);
+      const previousRecord = sortedRecords[i - 1];
+      if (previousRecord.type !== 'meal') {
+        const diffHours = (record.timestamp - previousRecord.timestamp) / (1000 * 60 * 60);
         if (diffHours >= 0.5 && diffHours <= 8) {
           holdIntervalsHours.push(diffHours);
         }
@@ -125,12 +125,12 @@ export function calculateStatistics(logs: PottyLog[], targetIntervalHours: numbe
 
   // Calculate meal-to-poop correlation (time in minutes)
   const mealToPoopDelaysMinutes: number[] = [];
-  const mealLogs = sortedLogs.filter((l) => l.type === 'meal');
-  const poopLogs = sortedLogs.filter((l) => l.type === 'poop' || l.type === 'both');
+  const mealRecords = sortedRecords.filter((l) => l.type === 'meal');
+  const poopRecords = sortedRecords.filter((l) => l.type === 'poop' || l.type === 'both');
 
-  for (const meal of mealLogs) {
+  for (const meal of mealRecords) {
     // Find the next poop after this meal within 3 hours (180 mins)
-    const nextPoop = poopLogs.find(
+    const nextPoop = poopRecords.find(
       (p) => p.timestamp > meal.timestamp && (p.timestamp - meal.timestamp) <= 180 * 60 * 1000
     );
     if (nextPoop) {
@@ -168,7 +168,7 @@ export function calculateStatistics(logs: PottyLog[], targetIntervalHours: numbe
     : null;
 
   return {
-    totalLogs,
+    totalRecords,
     totalPees,
     totalPoops,
     totalMeals,
@@ -204,7 +204,7 @@ function initEmpty24Hours(): TimeOfDayDistribution[] {
   return result;
 }
 
-export function getDailyTrendsLast7Days(logs: PottyLog[], referenceTimeMs: number = Date.now()): DailyPottyTrend[] {
+export function getDailyTrendsLast7Days(records: PottyRecord[], referenceTimeMs: number = Date.now()): DailyPottyTrend[] {
   const trends: DailyPottyTrend[] = [];
   const refDate = new Date(referenceTimeMs);
 
@@ -215,11 +215,11 @@ export function getDailyTrendsLast7Days(logs: PottyLog[], referenceTimeMs: numbe
     const startOfDay = d.getTime();
     const endOfDay = startOfDay + 24 * 60 * 60 * 1000 - 1;
 
-    const dayLogs = logs.filter((l) => l.timestamp >= startOfDay && l.timestamp <= endOfDay);
-    const pees = dayLogs.filter((l) => l.type === 'pee' || l.type === 'both').length;
-    const poops = dayLogs.filter((l) => l.type === 'poop' || l.type === 'both').length;
-    const meals = dayLogs.filter((l) => l.type === 'meal').length;
-    const accidents = dayLogs.filter((l) => l.isAccident).length;
+    const dayRecords = records.filter((l) => l.timestamp >= startOfDay && l.timestamp <= endOfDay);
+    const pees = dayRecords.filter((l) => l.type === 'pee' || l.type === 'both').length;
+    const poops = dayRecords.filter((l) => l.type === 'poop' || l.type === 'both').length;
+    const meals = dayRecords.filter((l) => l.type === 'meal').length;
+    const accidents = dayRecords.filter((l) => l.isAccident).length;
 
     const dayName = i === 0 ? 'Today' : d.toLocaleDateString([], { weekday: 'short' });
     const shortDate = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
@@ -234,7 +234,7 @@ export function getDailyTrendsLast7Days(logs: PottyLog[], referenceTimeMs: numbe
       poops,
       meals,
       accidents,
-      total: dayLogs.length,
+      total: dayRecords.length,
     });
   }
 
@@ -242,7 +242,7 @@ export function getDailyTrendsLast7Days(logs: PottyLog[], referenceTimeMs: numbe
 }
 
 export function formatTimeAgo(timestampMs: number | null, nowMs: number = Date.now()): string {
-  if (!timestampMs) return 'Never logged';
+  if (!timestampMs) return 'Never recorded';
   const diffMs = Math.max(0, nowMs - timestampMs);
   const diffMinutes = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMinutes / 60);

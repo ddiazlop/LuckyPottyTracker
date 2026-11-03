@@ -78,8 +78,8 @@ class TactileFeedback {
     }
   }
 
-  // Pee log feedback: Water droplet pop
-  public triggerPeeLog() {
+  // Pee record feedback: Water droplet pop
+  public triggerPeeFeedback() {
     if (this.hapticsEnabled && typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       try {
         // Android dual-pulse pattern
@@ -114,8 +114,8 @@ class TactileFeedback {
     }
   }
 
-  // Poop log feedback: Satisfying warm physical pop/thump
-  public triggerPoopLog() {
+  // Poop record feedback: Satisfying warm physical pop/thump
+  public triggerPoopFeedback() {
     if (this.hapticsEnabled && typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       try {
         // Deep solid vibration
@@ -148,8 +148,8 @@ class TactileFeedback {
     }
   }
 
-  // Both log feedback: Harmonious double chime
-  public triggerBothLog() {
+  // Both record feedback: Harmonious double chime
+  public triggerBothFeedback() {
     if (this.hapticsEnabled && typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       try {
         navigator.vibrate([30, 25, 30, 25, 60]);
@@ -190,8 +190,8 @@ class TactileFeedback {
     }
   }
 
-  // Meal log feedback: Friendly dinner bell chime
-  public triggerMealLog() {
+  // Meal record feedback: Friendly dinner bell chime
+  public triggerMealFeedback() {
     if (this.hapticsEnabled && typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       try {
         navigator.vibrate([20, 20, 40]);
