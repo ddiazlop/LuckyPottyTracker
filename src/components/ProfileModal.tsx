@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { DogProfile, PottyRecord, DogLifeStage } from '../types';
+import { createBackupFile, serializeBackupFile } from '../storage/backupFile';
+import { downloadTextFile } from '../utils/downloadTextFile';
 import { haptics } from '../utils/haptics';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -93,13 +95,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
   const handleExport = () => {
     haptics.triggerTick();
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(records, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `${dog.name.toLowerCase()}_potty_records_${Date.now()}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
+    const backupFile = createBackupFile(dog, records);
+    const backupFileName = `${dog.name.toLowerCase().replace(/\s+/g, '_')}_pawspot_backup_${Date.now()}.json`;
+
+    downloadTextFile(backupFileName, serializeBackupFile(backupFile));
+    toast.success('Backup exported', {
+      description: `${records.length} records and ${dog.name}'s profile saved to a file.`,
+    });
   };
 
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -302,7 +304,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
               <Button variant="soft" onClick={handleExport} className="h-auto py-2 text-xs">
                 <Download className="w-3.5 h-3.5 text-slate-500" />
-                <span>Export JSON</span>
+                <span>Export Backup</span>
               </Button>
             </div>
 

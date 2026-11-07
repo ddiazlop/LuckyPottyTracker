@@ -45,7 +45,7 @@ Move the browser onto IndexedDB first, then the Android app onto the platform SQ
 | # | Iteration | Done when | State |
 |---|-----------|-----------|-------|
 | 1 | Replace the browser `localStorage` adapter with an IndexedDB adapter behind the existing contract | Add, undo, delete, clear-all and profile-save survive a hard reload; a fresh browser profile opens with zero records; `git grep localStorage` matches only `src/utils/haptics.ts` | ✅ |
-| 2 | Export a versioned backup that includes the dog profile | Exporting produces `{schemaVersion, exportedAt, profile, logs}` and the downloaded file holds the current dog name and the full record count | ⬜ |
+| 2 | Export a versioned backup that includes the dog profile | Exporting produces `{schemaVersion, exportedAt, profile, logs}` and the downloaded file holds the current dog name and the full record count | ✅ |
 | 3 | Import a versioned backup, still accepting the legacy bare array | Re-importing a file from row 2 restores the exact record count and dog name; a pre-update bare array restores the records; a malformed file shows an error and leaves stored data unchanged | ⬜ |
 | 4 | Retry on the blocking startup-failure screen | A forced store-init failure blocks the app with a Retry button; once the fault is cleared, Retry opens the app with the stored data intact | ⬜ |
 | 5 | Add the SQLite plugin and Java 21 wiring without using it yet | `npm i @capacitor-community/sqlite`, `npx cap sync android` and `gradlew assembleDebug` all succeed; web build and PWA still pass; the app still runs on the IndexedDB adapter | ⬜ |
