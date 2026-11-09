@@ -34,6 +34,7 @@ export default function App() {
 
   const {
     startupState,
+    retryStartup,
     dog,
     records,
     addRecord,
@@ -49,7 +50,7 @@ export default function App() {
   }
 
   if (startupState.status === 'failed') {
-    return <StartupFailureNotice failureMessage={startupState.failureMessage} />;
+    return <StartupFailureNotice failureMessage={startupState.failureMessage} onRetry={retryStartup} />;
   }
 
   const handleTabChange = (value: string) => {

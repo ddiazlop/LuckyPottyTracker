@@ -14,6 +14,7 @@ export type PottyTrackerStartupState =
 
 export interface PottyTrackerData {
   startupState: PottyTrackerStartupState;
+  retryStartup: () => void;
   dog: DogProfile;
   records: PottyRecord[];
   addRecord: (newRecordData: Omit<PottyRecord, 'id'>) => Promise<void>;
@@ -35,9 +36,15 @@ function createRecordIdentifier(): string {
 
 export function usePottyTrackerData(): PottyTrackerData {
   const [store] = useState(getPottyTrackerStore);
+  const [startupAttemptCount, setStartupAttemptCount] = useState(0);
   const [startupState, setStartupState] = useState<PottyTrackerStartupState>({ status: 'loading' });
   const [dog, setDog] = useState<DogProfile>(DEFAULT_PROFILE);
   const [records, setRecords] = useState<PottyRecord[]>([]);
+
+  const retryStartup = () => {
+    setStartupState({ status: 'loading' });
+    setStartupAttemptCount((previousAttemptCount) => previousAttemptCount + 1);
+  };
 
   useEffect(() => {
     let isComponentUnmounted = false;
@@ -62,7 +69,7 @@ export function usePottyTrackerData(): PottyTrackerData {
     return () => {
       isComponentUnmounted = true;
     };
-  }, [store]);
+  }, [store, startupAttemptCount]);
 
   const storeRecord = async (record: PottyRecord): Promise<boolean> => {
     try {
@@ -202,6 +209,7 @@ export function usePottyTrackerData(): PottyTrackerData {
 
   return {
     startupState,
+    retryStartup,
     dog,
     records,
     addRecord,
