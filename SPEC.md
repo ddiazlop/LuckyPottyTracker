@@ -1,6 +1,6 @@
 # IndexedDB and Native SQLite Storage for Paws & Pots
 
-State: 🔄 in progress
+State: ✅ done
 
 ## Problem & Vision
 
@@ -30,7 +30,7 @@ Move the browser onto IndexedDB first, then the Android app onto the platform SQ
 
 ## Decisions
 
-- Web adapter uses `idb@8.x` over database `pawspot` v1, with stores `records` (keyPath `id`, `byTimestamp` index), `profile` (keyPath `id`) and `meta` (keyPath `key`).
+- Web adapter uses `idb@8.x` over database `pawspot` v1, with stores `records` (keyPath `id`, `byTimestamp` index) and `profile` (keyPath `id`).
 - Android adapter uses `@capacitor-community/sqlite@8.x`, imported dynamically so the PWA never executes it; its wasm web side is never imported.
 - Backend selection lives in `src/storage/index.ts`: `Capacitor.getPlatform() === 'android'` picks SQLite, everything else picks IndexedDB.
 - The contract keeps its current shape from `src/storage/storeContract.ts` and stays the only thing the app imports.
@@ -51,4 +51,4 @@ Move the browser onto IndexedDB first, then the Android app onto the platform SQ
 | 5 | Add the SQLite plugin and Java 21 wiring without using it yet | `npm i @capacitor-community/sqlite`, `npx cap sync android` and `gradlew assembleDebug` all succeed; web build and PWA still pass; the app still runs on the IndexedDB adapter | ✅ |
 | 6 | Select the SQLite backend at runtime and implement the full contract on it | On device, add, undo, delete, clear-all and profile-save survive force-stop and relaunch; no record or profile read touches `localStorage` on Android | ✅ |
 | 7 | Dev-only sample seeding behind `VITE_SEED_SAMPLE_DATA` | With the flag set a fresh store opens with sample records and profile; unset it opens empty; relaunching never duplicates rows; the flag is documented in `.env.example` | ✅ |
-| 8 | Cleanup: drop `bun.lock`, delete dead storage code, keep SQLite wasm out of the precache | One lockfile remains; `localStorage` appears only in `haptics.ts`; the precache manifest carries no SQLite or wasm chunk; `npm run lint` and `npm run build` pass | ⬜ |
+| 8 | Cleanup: drop `bun.lock`, delete dead storage code, keep SQLite wasm out of the precache | One lockfile remains; `localStorage` appears only in `haptics.ts`; the precache manifest carries no SQLite or wasm chunk; `npm run lint` and `npm run build` pass | ✅ |

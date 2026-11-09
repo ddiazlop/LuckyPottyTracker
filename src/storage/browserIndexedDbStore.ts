@@ -8,14 +8,8 @@ const DATABASE_VERSION = 1;
 const RECORDS_STORE_NAME = 'records';
 const RECORDS_TIMESTAMP_INDEX_NAME = 'byTimestamp';
 const PROFILE_STORE_NAME = 'profile';
-const META_STORE_NAME = 'meta';
 
 const UNSUPPORTED_BROWSER_MESSAGE = 'This browser blocks the offline database, so Paws & Pots cannot keep your data.';
-
-interface StoredMetaEntry {
-  key: string;
-  value: unknown;
-}
 
 interface PottyTrackerDatabaseSchema extends DBSchema {
   records: {
@@ -29,10 +23,6 @@ interface PottyTrackerDatabaseSchema extends DBSchema {
     key: string;
     value: DogProfile;
   };
-  meta: {
-    key: string;
-    value: StoredMetaEntry;
-  };
 }
 
 type PottyTrackerDatabase = IDBPDatabase<PottyTrackerDatabaseSchema>;
@@ -45,7 +35,6 @@ function createPottyTrackerDatabase(): Promise<PottyTrackerDatabase> {
       const recordsStore = database.createObjectStore(RECORDS_STORE_NAME, { keyPath: 'id' });
       recordsStore.createIndex(RECORDS_TIMESTAMP_INDEX_NAME, 'timestamp');
       database.createObjectStore(PROFILE_STORE_NAME, { keyPath: 'id' });
-      database.createObjectStore(META_STORE_NAME, { keyPath: 'key' });
     },
     terminated() {
       sharedDatabaseOpeningPromise = null;
