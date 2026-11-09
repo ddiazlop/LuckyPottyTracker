@@ -15,6 +15,7 @@ export default defineConfig(() => {
         includeAssets: ['icon.svg', 'icon-192.png', 'icon-512.png', 'images/*.jpg'],
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webmanifest}'],
+          globIgnores: ['**/sqlite-plugin*.js', '**/*.wasm'],
           navigateFallback: 'index.html',
         },
         devOptions: {
@@ -25,6 +26,15 @@ export default defineConfig(() => {
     resolve: {
       alias: {
         '@': path.resolve(import.meta.dirname || '.', 'src'),
+      },
+    },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(moduleId) {
+            if (moduleId.includes('@capacitor-community/sqlite')) return 'sqlite-plugin';
+          },
+        },
       },
     },
     server: {
