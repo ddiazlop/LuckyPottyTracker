@@ -4,6 +4,7 @@ import type { DogProfile, PottyRecord } from '../types';
 import { getPottyTrackerStore } from '../storage';
 import { DEFAULT_PROFILE } from '../storage/defaults';
 import { generateSampleRecords } from '../storage/sampleRecords';
+import type { ParsedBackupFile } from '../storage/backupFile';
 import { haptics } from '../utils/haptics';
 
 export type PottyTrackerStartupState =
@@ -19,7 +20,7 @@ export interface PottyTrackerData {
   deleteRecord: (recordId: string) => Promise<void>;
   clearRecords: () => Promise<void>;
   loadSampleRecords: () => Promise<void>;
-  importRecords: (importedRecords: PottyRecord[]) => Promise<boolean>;
+  importBackup: (parsedBackup: ParsedBackupFile) => Promise<boolean>;
   saveProfile: (updatedProfile: DogProfile) => Promise<void>;
 }
 
@@ -159,15 +160,33 @@ export function usePottyTrackerData(): PottyTrackerData {
     });
   };
 
-  const importRecords = async (importedRecords: PottyRecord[]): Promise<boolean> => {
+  const restorePreviousData = async (
+    profileBeforeImport: DogProfile,
+    recordsBeforeImport: PottyRecord[]
+  ): Promise<void> => {
     try {
-      await store.replaceRecords(importedRecords);
+      await store.replaceRecords(recordsBeforeImport);
+      await store.saveProfile(profileBeforeImport);
     } catch {
-      toast.error('Could not save the imported records on this device.');
+      return;
+    }
+  };
+
+  const importBackup = async (parsedBackup: ParsedBackupFile): Promise<boolean> => {
+    const profileBeforeImport = dog;
+    const recordsBeforeImport = records;
+
+    try {
+      await store.replaceRecords(parsedBackup.logs);
+      if (parsedBackup.profile) await store.saveProfile(parsedBackup.profile);
+    } catch {
+      await restorePreviousData(profileBeforeImport, recordsBeforeImport);
+      toast.error('Could not restore this backup on this device.');
       return false;
     }
 
-    setRecords(importedRecords);
+    setRecords(parsedBackup.logs);
+    if (parsedBackup.profile) setDog(parsedBackup.profile);
     return true;
   };
 
@@ -189,7 +208,7 @@ export function usePottyTrackerData(): PottyTrackerData {
     deleteRecord,
     clearRecords,
     loadSampleRecords,
-    importRecords,
+    importBackup,
     saveProfile,
   };
 }

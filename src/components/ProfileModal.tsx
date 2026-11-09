@@ -10,7 +10,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { DogProfile, PottyRecord, DogLifeStage } from '../types';
-import { createBackupFile, serializeBackupFile } from '../storage/backupFile';
+import { createBackupFile, parseBackupFile, BackupFileError, serializeBackupFile } from '../storage/backupFile';
+import type { ParsedBackupFile } from '../storage/backupFile';
 import { downloadTextFile } from '../utils/downloadTextFile';
 import { haptics } from '../utils/haptics';
 import { cn } from '@/lib/utils';
@@ -49,7 +50,7 @@ interface ProfileModalProps {
   onResetData: () => void;
   onLoadSampleData: () => void;
   records: PottyRecord[];
-  onImportRecords: (records: PottyRecord[]) => Promise<boolean>;
+  onImportBackup: (parsedBackup: ParsedBackupFile) => Promise<boolean>;
 }
 
 const LIFE_STAGE_STYLES: Record<DogLifeStage, string> = {
@@ -69,7 +70,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   onResetData,
   onLoadSampleData,
   records,
-  onImportRecords,
+  onImportBackup,
 }) => {
   const [name, setName] = useState(dog.name);
   const [breed, setBreed] = useState(dog.breed);
@@ -79,6 +80,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const [targetInterval, setTargetInterval] = useState(dog.targetIntervalHours);
   const [soundEnabled, setSoundEnabled] = useState(haptics.isSoundEnabled());
   const [hapticsEnabled, setHapticsEnabled] = useState(haptics.isHapticsEnabled());
+  const [pendingBackupImport, setPendingBackupImport] = useState<ParsedBackupFile | null>(null);
 
   const handleSave = () => {
     haptics.triggerTick();
@@ -106,24 +108,50 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
+    e.target.value = '';
     if (!selectedFile) return;
 
     const fileReader = new FileReader();
     fileReader.readAsText(selectedFile, 'UTF-8');
-    fileReader.onload = async (event) => {
+    fileReader.onload = (event) => {
       try {
-        const parsed = JSON.parse(event.target?.result as string);
-        if (!Array.isArray(parsed)) return;
-
-        const isImported = await onImportRecords(parsed);
-        if (!isImported) return;
-
-        haptics.triggerBothFeedback();
-        toast.success(`Successfully imported ${parsed.length} records!`);
-      } catch {
-        toast.error('Invalid JSON file format.');
+        setPendingBackupImport(parseBackupFile(event.target?.result as string));
+      } catch (error) {
+        haptics.triggerUndo();
+        toast.error(error instanceof BackupFileError ? error.message : 'Invalid JSON file format.');
       }
     };
+    fileReader.onerror = () => {
+      toast.error('Could not read the selected file.');
+    };
+  };
+
+  const applyPendingBackupImport = async () => {
+    const backupToRestore = pendingBackupImport;
+    if (!backupToRestore) return;
+
+    const isImported = await onImportBackup(backupToRestore);
+    setPendingBackupImport(null);
+    if (!isImported) return;
+
+    haptics.triggerBothFeedback();
+    toast.success(`Successfully imported ${backupToRestore.logs.length} records!`, {
+      description: backupToRestore.profile
+        ? `${backupToRestore.profile.name}'s profile was restored too.`
+        : 'Your current dog profile was kept.',
+    });
+  };
+
+  const describePendingBackupImport = (): string => {
+    if (!pendingBackupImport) return '';
+
+    const recordCountLabel = `${pendingBackupImport.logs.length} record${
+      pendingBackupImport.logs.length === 1 ? '' : 's'
+    }`;
+
+    return pendingBackupImport.profile
+      ? `This replaces every record on this device with ${recordCountLabel} and restores ${pendingBackupImport.profile.name}'s profile.`
+      : `This replaces every record on this device with ${recordCountLabel}. Your dog profile stays as it is.`;
   };
 
   const handleLifeStageChange = (value: string) => {
@@ -363,6 +391,24 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           </Button>
           <Button onClick={handleSave}>Save Changes</Button>
         </DialogFooter>
+
+        <AlertDialog
+          open={pendingBackupImport !== null}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setPendingBackupImport(null);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Restore this backup?</AlertDialogTitle>
+              <AlertDialogDescription>{describePendingBackupImport()}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={applyPendingBackupImport}>Restore Backup</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );

@@ -40,7 +40,7 @@ export default function App() {
     deleteRecord,
     clearRecords,
     loadSampleRecords,
-    importRecords,
+    importBackup,
     saveProfile,
   } = usePottyTrackerData();
 
@@ -105,7 +105,7 @@ export default function App() {
         onResetData={clearRecords}
         onLoadSampleData={loadSampleRecords}
         records={records}
-        onImportRecords={importRecords}
+        onImportBackup={importBackup}
       />
 
       <RetroactiveRecordModal
