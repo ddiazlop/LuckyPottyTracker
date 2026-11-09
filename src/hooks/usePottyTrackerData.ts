@@ -4,6 +4,7 @@ import type { DogProfile, PottyRecord } from '../types';
 import { getPottyTrackerStore } from '../storage';
 import { DEFAULT_PROFILE } from '../storage/defaults';
 import { generateSampleRecords } from '../storage/sampleRecords';
+import { seedSampleDataWhenEnabled } from '../storage/sampleSeeding';
 import type { ParsedBackupFile } from '../storage/backupFile';
 import { haptics } from '../utils/haptics';
 
@@ -52,6 +53,7 @@ export function usePottyTrackerData(): PottyTrackerData {
     const openPottyTrackerStore = async () => {
       try {
         await store.initialize();
+        await seedSampleDataWhenEnabled(store);
         const [storedProfile, storedRecords] = await Promise.all([store.loadProfile(), store.loadRecords()]);
         if (isComponentUnmounted) return;
 
