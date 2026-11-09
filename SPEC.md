@@ -35,7 +35,7 @@ Move the browser onto IndexedDB first, then the Android app onto the platform SQ
 - Backend selection lives in `src/storage/index.ts`: `Capacitor.getPlatform() === 'android'` picks SQLite, everything else picks IndexedDB.
 - The contract keeps its current shape from `src/storage/storeContract.ts` and stays the only thing the app imports.
 - Backup format is `{ schemaVersion: 1, exportedAt, profile, logs }`; import still accepts the legacy bare array.
-- Java 21 for both the app and the plugin, with `compileOptions` declared after `apply from: 'capacitor.build.gradle'` so `cap sync` cannot revert it.
+- One Java version for every Gradle build and every Android module: the daemon JVM is pinned to 24 in `android/gradle/gradle-daemon-jvm.properties`, with foojay provisioning it when missing, and a root `subprojects` block forces `compileOptions` to 24 across the app, Capacitor core and plugins. Java 25 is not available: d8 rejects class file 69 and Kotlin caps at 24. `compileOptions` also stays declared after `apply from: 'capacitor.build.gradle'` so `cap sync` cannot revert it.
 - npm is the only package manager; `bun.lock` goes away.
 
 ## Iterations
@@ -48,7 +48,7 @@ Move the browser onto IndexedDB first, then the Android app onto the platform SQ
 | 2 | Export a versioned backup that includes the dog profile | Exporting produces `{schemaVersion, exportedAt, profile, logs}` and the downloaded file holds the current dog name and the full record count | ✅ |
 | 3 | Import a versioned backup, still accepting the legacy bare array | Re-importing a file from row 2 restores the exact record count and dog name; a pre-update bare array restores the records; a malformed file shows an error and leaves stored data unchanged | ✅ |
 | 4 | Retry on the blocking startup-failure screen | A forced store-init failure blocks the app with a Retry button; once the fault is cleared, Retry opens the app with the stored data intact | ✅ |
-| 5 | Add the SQLite plugin and Java 21 wiring without using it yet | `npm i @capacitor-community/sqlite`, `npx cap sync android` and `gradlew assembleDebug` all succeed; web build and PWA still pass; the app still runs on the IndexedDB adapter | ⬜ |
+| 5 | Add the SQLite plugin and Java 21 wiring without using it yet | `npm i @capacitor-community/sqlite`, `npx cap sync android` and `gradlew assembleDebug` all succeed; web build and PWA still pass; the app still runs on the IndexedDB adapter | ✅ |
 | 6 | Select the SQLite backend at runtime and implement the full contract on it | On device, add, undo, delete, clear-all and profile-save survive force-stop and relaunch; no record or profile read touches `localStorage` on Android | ⬜ |
 | 7 | Dev-only sample seeding behind `VITE_SEED_SAMPLE_DATA` | With the flag set a fresh store opens with sample records and profile; unset it opens empty; relaunching never duplicates rows; the flag is documented in `.env.example` | ⬜ |
 | 8 | Cleanup: drop `bun.lock`, delete dead storage code, keep SQLite wasm out of the precache | One lockfile remains; `localStorage` appears only in `haptics.ts`; the precache manifest carries no SQLite or wasm chunk; `npm run lint` and `npm run build` pass | ⬜ |
