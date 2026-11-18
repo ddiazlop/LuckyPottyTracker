@@ -14,7 +14,7 @@ import { RetroactiveRecordModal } from './components/RetroactiveRecordModal';
 import { StartupFailureNotice } from './components/StartupFailureNotice';
 import { StartupLoader } from './components/StartupLoader';
 import { BigButtonSection } from './components/sections/BigButtonSection/BigButtonSection';
-import { DashboardSection } from './components/sections/DashboardSection';
+import { DashboardSection } from './components/sections/DashboardSection/DashboardSection';
 import { HistorySection } from './components/sections/HistorySection';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Toaster } from '@/components/ui/sonner';
