@@ -7,6 +7,7 @@ import { generateSampleRecords } from '../storage/sampleRecords';
 import { seedSampleDataWhenEnabled } from '../storage/sampleSeeding';
 import type { ParsedBackupFile } from '../storage/backupFile';
 import { haptics } from '../utils/haptics';
+import { formatClockTime } from '../utils/stats';
 
 export type PottyTrackerStartupState =
   | { status: 'loading' }
@@ -114,8 +115,8 @@ export function usePottyTrackerData(): PottyTrackerData {
         : 'Poop';
     const accidentNote = newRecord.isAccident ? ' (Accident)' : '';
 
-    toast(`Recorded ${actionLabel}${accidentNote}`, {
-      description: `Recorded for ${dog.name}`,
+    toast.success(`Recorded ${actionLabel}${accidentNote}`, {
+      description: `${dog.name} · ${newRecord.location} · ${formatClockTime(newRecord.timestamp)}`,
       action: {
         label: 'Undo',
         onClick: () => {

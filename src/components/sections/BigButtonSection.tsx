@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import {
   Droplets,
   Sparkles,
   Clock,
   MapPin,
-  CheckCircle2,
   AlertTriangle,
   ChevronDown,
   ChevronUp,
@@ -61,7 +60,6 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
   const [timeOffsetMinutes, setTimeOffsetMinutes] = useState<number>(0);
   const [showNotes, setShowNotes] = useState<boolean>(false);
   const [notes, setNotes] = useState<string>('');
-  const [lastRecordedType, setLastRecordedType] = useState<PottyType | null>(null);
 
   // If it's Indoors, it's ALWAYS an accident
   const isAccident = location === 'Indoors';
@@ -121,10 +119,6 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
       location,
       notes: notes.trim() || undefined,
     });
-
-    // Flash confirmation
-    setLastRecordedType(type);
-    setTimeout(() => setLastRecordedType(null), 2500);
 
     // Reset one-time detail states
     if (notes) setNotes('');
@@ -389,26 +383,6 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
           Feed 🍖
         </span>
       </MotionButton>
-
-      {/* Success Badge Banner */}
-      <AnimatePresence>
-        {lastRecordedType && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-          >
-            <Alert className="justify-center gap-2 border-none bg-emerald-500 text-white shadow-sm [&>svg]:text-white">
-              <CheckCircle2 />
-              <AlertDescription className="font-semibold text-white">
-                {lastRecordedType === 'meal'
-                  ? `Recorded Meal for ${dog.name} at ${formatClockTime(currentTime)}! 🥣`
-                  : `Recorded ${lastRecordedType.toUpperCase()} for ${dog.name} at ${location}${isAccident ? ' (Accident)' : ''}!`}
-              </AlertDescription>
-            </Alert>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Optional Quick Note Tray */}
       <Collapsible open={showNotes} onOpenChange={setShowNotes}>
