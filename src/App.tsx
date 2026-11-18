@@ -15,7 +15,7 @@ import { StartupFailureNotice } from './components/StartupFailureNotice';
 import { StartupLoader } from './components/StartupLoader';
 import { BigButtonSection } from './components/sections/BigButtonSection/BigButtonSection';
 import { DashboardSection } from './components/sections/DashboardSection/DashboardSection';
-import { HistorySection } from './components/sections/HistorySection';
+import { HistorySection } from './components/sections/HistorySection/HistorySection';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Toaster } from '@/components/ui/sonner';
 
