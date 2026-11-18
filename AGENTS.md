@@ -16,7 +16,6 @@ and holds no domain data or section state.
 
 ```
 src/components/sections/BigButtonSection/
-├── index.ts
 ├── BigButtonSection.tsx
 ├── constants.ts
 └── subsections/
@@ -24,5 +23,5 @@ src/components/sections/BigButtonSection/
     └── TimeOffsetSelector.tsx
 ```
 
-Folder name matches the component name, `index.ts` re-exports the section, and shared
+Folder name matches the component name, imports target the `.tsx` directly, and shared
 options live in the section's `constants.ts`.
