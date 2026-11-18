@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import {
   Droplets,
   Sparkles,
-  Clock,
   MapPin,
   AlertTriangle,
   ChevronDown,
@@ -12,11 +11,9 @@ import {
 } from 'lucide-react';
 import { DogProfile, PottyRecord, PottyType, PottyLocation } from '../../types';
 import { haptics } from '../../utils/haptics';
-import { formatTimeAgo, formatClockTime } from '../../utils/stats';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -28,9 +25,7 @@ import {
 
 interface BigButtonSectionProps {
   dog: DogProfile;
-  records: PottyRecord[];
   onAddRecord: (record: Omit<PottyRecord, 'id'>) => void;
-  onOpenRetroModal: () => void;
 }
 
 const LOCATION_OPTIONS: { id: PottyLocation; label: string; icon: string }[] = [
@@ -51,9 +46,7 @@ const MotionButton = motion.create(Button);
 
 export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
   dog,
-  records,
   onAddRecord,
-  onOpenRetroModal,
 }) => {
   const [location, setLocation] = useState<PottyLocation>('Walk');
   const [isIndoorsShaking, setIsIndoorsShaking] = useState<boolean>(false);
@@ -76,25 +69,6 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
     setLocation(selectedLoc);
   };
 
-  // Live timer tick to update "X min ago"
-  const [currentTime, setCurrentTime] = useState<number>(Date.now());
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(Date.now()), 15000);
-    return () => clearInterval(timer);
-  }, []);
-
-  // Calculate last pee, poop, and meal timestamps
-  const lastPeeRecord = records.find((l) => l.type === 'pee' || l.type === 'both');
-  const lastPoopRecord = records.find((l) => l.type === 'poop' || l.type === 'both');
-  const lastMealRecord = records.find((l) => l.type === 'meal');
-
-  // Elapsed hours for urgency state
-  const mostRecentTimestamp = Math.max(lastPeeRecord?.timestamp || 0, lastPoopRecord?.timestamp || 0);
-  const elapsedHours = mostRecentTimestamp > 0
-    ? (currentTime - mostRecentTimestamp) / (1000 * 60 * 60)
-    : 0;
-  const isDueSoon = elapsedHours >= (dog.targetIntervalHours || 4);
-
   const handlePress = (type: PottyType) => {
     // 1. Tactile haptic & sound feedback
     if (type === 'pee') {
@@ -108,7 +82,7 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
     }
 
     // 2. Calculate timestamp based on selected offset
-    const recordTimestamp = currentTime - timeOffsetMinutes * 60 * 1000;
+    const recordTimestamp = Date.now() - timeOffsetMinutes * 60 * 1000;
 
     // 3. Submit record (Meals indoors are normal and not accidents)
     onAddRecord({
@@ -125,108 +99,8 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
     if (timeOffsetMinutes !== 0) setTimeOffsetMinutes(0);
   };
 
-  const lifecycleBadge =
-    dog.lifeStage === 'puppy' ? (
-      <Badge variant="amber">🐾 Puppy</Badge>
-    ) : dog.lifeStage === 'senior' ? (
-      <Badge variant="purple">🦴 Senior</Badge>
-    ) : (
-      <Badge variant="blue">🐕 Adult</Badge>
-    );
-
   return (
     <div className="w-full max-w-xl mx-auto px-4 py-3 flex flex-col gap-4">
-      {/* Dog Status & Hold Time Header */}
-      <Card className="gap-0 p-4">
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <img
-                src={dog.avatarUrl}
-                alt={dog.name}
-                className="w-12 h-12 rounded-2xl object-cover ring-2 ring-amber-500/20"
-                referrerPolicy="no-referrer"
-              />
-              <span
-                className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white ${
-                  isDueSoon ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'
-                }`}
-              />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <h2 className="text-base font-bold text-slate-900 tracking-tight">{dog.name}</h2>
-                {lifecycleBadge}
-              </div>
-              <p className="text-xs text-slate-500">
-                {isDueSoon ? 'Potty outing recommended soon' : 'All good & comfortable'}
-              </p>
-            </div>
-          </div>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => {
-              haptics.triggerTick();
-              onOpenRetroModal();
-            }}
-            className="h-auto rounded-xl bg-slate-100 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-200"
-          >
-            <Clock className="w-3.5 h-3.5 text-slate-500" />
-            <span>Past Record</span>
-          </Button>
-        </div>
-
-        {/* Hold Trackers */}
-        <div className="grid grid-cols-3 gap-2 pt-3 border-t border-slate-100">
-          <Card className="gap-0 rounded-2xl border-amber-100/70 bg-amber-50/60 p-2.5 shadow-none">
-            <div className="flex items-center gap-1 text-xs font-semibold text-amber-800 mb-1">
-              <Droplets className="w-3 h-3 text-amber-600 shrink-0" />
-              <span className="truncate">Last Peed</span>
-            </div>
-            <p className="text-xs font-bold text-slate-800 tabular-nums">
-              {formatTimeAgo(lastPeeRecord?.timestamp ?? null, currentTime)}
-            </p>
-            {lastPeeRecord && (
-              <p className="text-[10px] text-slate-500 mt-0.5 truncate">
-                {formatClockTime(lastPeeRecord.timestamp)}
-              </p>
-            )}
-          </Card>
-
-          <Card className="gap-0 rounded-2xl border-orange-100/70 bg-orange-50/60 p-2.5 shadow-none">
-            <div className="flex items-center gap-1 text-xs font-semibold text-orange-900 mb-1">
-              <span className="text-xs leading-none">💩</span>
-              <span className="truncate">Last Pooped</span>
-            </div>
-            <p className="text-xs font-bold text-slate-800 tabular-nums">
-              {formatTimeAgo(lastPoopRecord?.timestamp ?? null, currentTime)}
-            </p>
-            {lastPoopRecord && (
-              <p className="text-[10px] text-slate-500 mt-0.5 truncate">
-                {formatClockTime(lastPoopRecord.timestamp)}
-              </p>
-            )}
-          </Card>
-
-          <Card className="gap-0 rounded-2xl border-emerald-100/70 bg-emerald-50/60 p-2.5 shadow-none">
-            <div className="flex items-center gap-1 text-xs font-semibold text-emerald-800 mb-1">
-              <span className="text-xs leading-none">🥣</span>
-              <span className="truncate">Last Fed</span>
-            </div>
-            <p className="text-xs font-bold text-slate-800 tabular-nums">
-              {formatTimeAgo(lastMealRecord?.timestamp ?? null, currentTime)}
-            </p>
-            {lastMealRecord && (
-              <p className="text-[10px] text-slate-500 mt-0.5 truncate">
-                {formatClockTime(lastMealRecord.timestamp)}
-              </p>
-            )}
-          </Card>
-        </div>
-      </Card>
-
       {/* LOCATION SELECTOR - PLACED PROMINENTLY ON TOP OF THE BIG BUTTONS */}
       <Card className="gap-2 rounded-3xl p-3.5">
         <div className="flex items-center justify-between px-1">

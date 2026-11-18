@@ -19,16 +19,16 @@ import { HistorySection } from './components/sections/HistorySection';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Toaster } from '@/components/ui/sonner';
 
-type TabId = 'record' | 'dashboard' | 'history';
+type TabId = 'home' | 'dashboard' | 'history';
 
 const TAB_ITEMS: { id: TabId; label: string; icon: React.ElementType }[] = [
-  { id: 'record', label: 'Big Button', icon: CircleDot },
+  { id: 'home', label: 'Home', icon: CircleDot },
   { id: 'dashboard', label: 'Statistics', icon: BarChart3 },
   { id: 'history', label: 'Timeline', icon: History },
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<TabId>('record');
+  const [activeTab, setActiveTab] = useState<TabId>('home');
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [showRetroModal, setShowRetroModal] = useState<boolean>(false);
 
@@ -70,13 +70,11 @@ export default function App() {
         onOpenSettings={() => setShowProfileModal(true)}
       />
 
-      <main className="flex-1 pb-24 pt-2">
-        <TabsContent value="record">
+      <main className="flex-1 pb-28 pt-2">
+        <TabsContent value="home">
           <BigButtonSection
             dog={dog}
-            records={records}
             onAddRecord={addRecord}
-            onOpenRetroModal={() => setShowRetroModal(true)}
           />
         </TabsContent>
 

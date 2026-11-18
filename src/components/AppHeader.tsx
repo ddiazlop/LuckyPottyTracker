@@ -26,8 +26,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 py-3">
-      <div className="max-w-xl mx-auto flex items-center justify-between gap-4">
+    <header className="sticky top-3 z-30 px-4">
+      <div className="max-w-xl mx-auto flex items-center justify-between gap-4 rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-3 shadow-sm shadow-slate-900/5 backdrop-blur-md">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 flex items-center justify-center text-white shadow-xs">
             <span className="text-sm">🐾</span>

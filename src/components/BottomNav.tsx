@@ -13,8 +13,8 @@ interface BottomNavProps {
 
 export const BottomNav: React.FC<BottomNavProps> = ({ navigationItems }) => {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 py-1.5 px-3">
-      <TabsList className="mx-auto grid w-full max-w-md grid-cols-3 gap-1 bg-transparent p-0">
+    <nav className="fixed bottom-3 left-1/2 z-40 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-3xl border border-slate-200/90 bg-white/95 px-3 py-1.5 shadow-lg shadow-slate-900/10 backdrop-blur-md">
+      <TabsList className="mx-auto grid w-full grid-cols-3 gap-1 bg-transparent p-0">
         {navigationItems.map((navigationItem) => {
           const NavigationIcon = navigationItem.icon;
 
