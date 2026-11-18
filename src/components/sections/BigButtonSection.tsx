@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import confetti from 'canvas-confetti';
 import {
   Droplets,
   Sparkles,
@@ -110,28 +109,10 @@ export const BigButtonSection: React.FC<BigButtonSectionProps> = ({
       haptics.triggerMealFeedback();
     }
 
-    // 2. Playful confetti celebration
-    try {
-      confetti({
-        particleCount: type === 'meal' ? 35 : type === 'both' ? 45 : 30,
-        spread: 60,
-        origin: { y: 0.65 },
-        colors:
-          type === 'meal'
-            ? ['#10b981', '#34d399', '#f59e0b']
-            : type === 'pee'
-            ? ['#f59e0b', '#fbbf24', '#38bdf8']
-            : ['#b45309', '#78350f', '#10b981'],
-        disableForReducedMotion: true,
-      });
-    } catch {
-      // Confetti fallback
-    }
-
-    // 3. Calculate timestamp based on selected offset
+    // 2. Calculate timestamp based on selected offset
     const recordTimestamp = currentTime - timeOffsetMinutes * 60 * 1000;
 
-    // 4. Submit record (Meals indoors are normal and not accidents)
+    // 3. Submit record (Meals indoors are normal and not accidents)
     onAddRecord({
       dogId: dog.id,
       type,
